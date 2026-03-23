@@ -114,6 +114,68 @@ ADMIN_EMAIL=admin@school.edu
 ADMIN_PASSWORD=YourSecurePassword!
 ```
 
+## Deploy via GitHub Zip
+
+A deploy script handles both initial installation and updates. It downloads the repo as a zip from GitHub, extracts to `/opt/apps/school-inventory`, and manages Docker Compose.
+
+### Initial Install
+
+```bash
+# Download the deploy script
+curl -fsSL https://raw.githubusercontent.com/terickson/school-inventory/main/scripts/deploy.sh -o deploy.sh
+chmod +x deploy.sh
+
+# Run it (requires sudo for /opt/apps)
+sudo ./deploy.sh
+```
+
+This will:
+1. Download and extract the latest code to `/opt/apps/school-inventory`
+2. Generate a `.env` with a random `SECRET_KEY`
+3. Build and start all Docker containers
+4. Wait for the backend health check to pass
+
+### Update an Existing Installation
+
+```bash
+sudo /opt/apps/school-inventory/scripts/deploy.sh
+```
+
+This will:
+1. Back up the SQLite database (with WAL checkpoint) to `/opt/apps/school-inventory-backups/`
+2. Preserve the existing `.env` file
+3. Stop running containers gracefully
+4. Download and extract the latest code (database files are preserved in the Docker volume)
+5. Restore the `.env` file
+6. Rebuild and restart containers (Alembic migrations run automatically on backend startup)
+
+### Options
+
+```bash
+sudo ./deploy.sh --branch develop    # Deploy a specific branch
+sudo ./deploy.sh --no-backup         # Skip database backup
+sudo ./deploy.sh --help              # Show usage
+```
+
+### Backups
+
+Database backups are saved to `/opt/apps/school-inventory-backups/` with timestamps. To restore a backup:
+
+```bash
+# Stop the backend
+cd /opt/apps/school-inventory && docker compose down
+
+# Copy backup into the Docker volume
+docker run --rm \
+  -v school-inventory_sqlite_data:/data \
+  -v /opt/apps/school-inventory-backups:/backup \
+  alpine:latest \
+  cp /backup/school_inventory_YYYYMMDD_HHMMSS.db /data/school_inventory.db
+
+# Restart
+docker compose up -d
+```
+
 ### Database Administration
 
 A lightweight Alpine-based container is available for direct SQLite database access. It shares the same data volume as the backend and includes `sqlite3`, `bash`, and `less`.
