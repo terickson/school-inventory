@@ -1,0 +1,45 @@
+version: "3.9"
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - sqlite_data:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/school_inventory.db
+      - SECRET_KEY=${SECRET_KEY:-production-secret-change-me-immediately}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@school.edu}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-AdminPass123!}
+      - CORS_ORIGINS=["http://localhost","http://localhost:80"]
+      - ENVIRONMENT=production
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  db-admin:
+    image: alpine:latest
+    entrypoint: /bin/sh -c "apk add --no-cache sqlite bash less > /dev/null 2>&1 && exec tail -f /dev/null"
+    volumes:
+      - sqlite_data:/data
+    environment:
+      - PS1=[db-admin (LIVE DATA)] $$
+    profiles:
+      - tools
+
+volumes:
+  sqlite_data:

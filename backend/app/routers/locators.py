@@ -1,0 +1,90 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.crud import locator as locator_crud
+from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.pagination import pagination_params
+from app.schemas.locator import LocatorCreate, LocatorUpdate, LocatorResponse
+from app.models.user import User
+from app.models.checkout import Inventory
+
+router = APIRouter(prefix="/locators", tags=["locators"])
+
+
+def _check_locator_access(locator, current_user: User):
+    if current_user.role != "admin" and locator.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+
+@router.get("", response_model=dict)
+def list_locators(
+    pagination: dict = Depends(pagination_params),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_id = None if current_user.role == "admin" else current_user.id
+    total, locators = locator_crud.get_locators(
+        db, skip=pagination["skip"], limit=pagination["limit"], user_id=user_id,
+    )
+    return {
+        "total": total,
+        "skip": pagination["skip"],
+        "limit": pagination["limit"],
+        "items": [LocatorResponse.model_validate(loc) for loc in locators],
+    }
+
+
+@router.post("", response_model=LocatorResponse, status_code=status.HTTP_201_CREATED)
+def create_locator(
+    locator_in: LocatorCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return locator_crud.create_locator(db, locator_in, current_user.id)
+
+
+@router.get("/{locator_id}", response_model=LocatorResponse)
+def get_locator(
+    locator_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    locator = locator_crud.get_locator(db, locator_id)
+    if not locator:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
+    _check_locator_access(locator, current_user)
+    return locator
+
+
+@router.patch("/{locator_id}", response_model=LocatorResponse)
+def update_locator(
+    locator_id: int,
+    locator_in: LocatorUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    locator = locator_crud.get_locator(db, locator_id)
+    if not locator:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
+    _check_locator_access(locator, current_user)
+    return locator_crud.update_locator(db, locator, locator_in)
+
+
+@router.delete("/{locator_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_locator(
+    locator_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    locator = locator_crud.get_locator(db, locator_id)
+    if not locator:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
+    # Check for existing inventory
+    has_inventory = db.query(Inventory).filter(Inventory.locator_id == locator_id).first()
+    if has_inventory:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete locator with existing inventory. Remove or reassign items first.",
+        )
+    locator_crud.delete_locator(db, locator)

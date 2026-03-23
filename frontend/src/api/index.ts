@@ -1,0 +1,6 @@
+export { authApi } from './auth.api'
+export { usersApi } from './users.api'
+export { locatorsApi } from './locators.api'
+export { catalogApi } from './catalog.api'
+export { inventoryApi } from './inventory.api'
+export { checkoutApi } from './checkout.api'

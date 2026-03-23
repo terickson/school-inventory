@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+backend/venv/
+.venv/
+venv/
+
+# Environment files
+.env
+!.env.example
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+
+# Test / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+*.lcov
+
+# Alembic
+backend/alembic/versions/__pycache__/
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+/tmp/

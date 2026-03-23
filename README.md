@@ -1,0 +1,312 @@
+# School Supply Inventory Management System
+
+A web-based inventory management system for tracking school supplies across physical storage locations. Teachers can browse items, perform self-service checkouts and returns, while admins manage the entire catalog, locations, users, and oversight of all checkouts.
+
+## Features
+
+- **Two-level location hierarchy** (Locator/Closet + Sublocator/Shelf)
+- **Quantity-based tracking** — designed for consumable supplies, not asset tags
+- **Checkout/Return system** with due dates and overdue alerts
+- **Role-based access control** — Admin and Teacher roles
+- **Dashboard** with summary stats, overdue checkouts, and low-stock alerts
+- **Responsive UI** — works on laptops and phones
+- **Self-hosted and free** — no per-seat licensing
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                     Browser                         │
+│  Vue 3 + Vuetify 3 SPA                             │
+│  (Pinia state, Vue Router, Axios HTTP client)       │
+└──────────────────────┬──────────────────────────────┘
+                       │  HTTP / REST
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│              FastAPI Backend (Python)                │
+│  /api/v1/auth   /api/v1/users   /api/v1/locators    │
+│  /api/v1/items  /api/v1/inventory /api/v1/checkouts  │
+│  JWT Auth │ SQLAlchemy ORM │ Alembic Migrations     │
+└──────────────────────┬──────────────────────────────┘
+                       │
+                       ▼
+              ┌────────────────┐
+              │  SQLite (WAL)  │
+              └────────────────┘
+```
+
+## Tech Stack
+
+| Layer    | Technology                                      |
+|----------|-------------------------------------------------|
+| Frontend | Vue 3, Vuetify 3, Pinia, Vue Router, Axios, Vite |
+| Backend  | FastAPI, SQLAlchemy 2.x, Alembic, Pydantic v2   |
+| Auth     | JWT (python-jose) + bcrypt (passlib)             |
+| Database | SQLite with WAL mode                             |
+| Testing  | pytest + httpx (backend), Vitest (frontend), Puppeteer (E2E) |
+| Deploy   | Docker Compose                                   |
+
+## Prerequisites
+
+- **Python 3.12+**
+- **Node.js 20+** and npm
+- **Docker & Docker Compose** (optional, for containerized deployment)
+
+## Quick Start (Development)
+
+### Backend
+
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations
+alembic upgrade head
+
+# Start the server (auto-seeds admin user)
+uvicorn app.main:app --reload --port 8000
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start dev server (proxies /api to backend)
+npm run dev
+```
+
+The app is now available at **http://localhost:5173**.
+
+### Default Admin Credentials
+
+| Field    | Value           |
+|----------|-----------------|
+| Username | `admin`         |
+| Password | `AdminPass123!` |
+
+## Quick Start (Docker)
+
+```bash
+# Build and start all services
+docker compose up -d
+
+# Access the app
+# Frontend: http://localhost
+# Backend API: http://localhost:8000
+```
+
+To customize credentials, create a `.env` file:
+
+```env
+SECRET_KEY=your-secure-secret-key
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@school.edu
+ADMIN_PASSWORD=YourSecurePassword!
+```
+
+### Database Administration
+
+A lightweight Alpine-based container is available for direct SQLite database access. It shares the same data volume as the backend and includes `sqlite3`, `bash`, and `less`.
+
+The container is behind a Docker Compose profile so it doesn't run by default:
+
+```bash
+# Start the db-admin container alongside the app
+docker compose --profile tools up -d
+
+# Exec into the container
+docker compose exec db-admin bash
+
+# Open the database
+sqlite3 /data/school_inventory.db
+```
+
+Common `sqlite3` commands:
+
+```sql
+.tables                                          -- List all tables
+.schema users                                    -- Show table schema
+SELECT * FROM users;                             -- Query users
+SELECT * FROM checkouts WHERE status = 'overdue'; -- Find overdue checkouts
+SELECT i.name, inv.quantity, inv.min_quantity
+  FROM inventory inv JOIN items i ON i.id = inv.item_id
+  WHERE inv.quantity < inv.min_quantity;          -- Low stock report
+PRAGMA integrity_check;                          -- Verify database integrity
+.quit                                            -- Exit
+```
+
+> **Warning:** This container has read/write access to the live production database. SQLite WAL mode means reads won't block the backend, but manual writes could cause `SQLITE_BUSY` errors if the backend is also writing. Use `BEGIN IMMEDIATE` for any manual write transactions.
+
+## API Documentation
+
+When running in development mode, interactive API docs are available at:
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+### Database Backup
+
+Admins can download a complete backup of the SQLite database.
+
+First, obtain an admin access token by logging in:
+
+```bash
+# Log in to get an access token
+curl -X POST http://localhost:8000/api/v1/auth/token \
+  -d "username=admin&password=AdminPass123!" \
+  -H "Content-Type: application/x-www-form-urlencoded"
+```
+
+This returns a JSON response containing `access_token`. Use it to download the backup:
+
+```bash
+# Download the database backup
+curl -H "Authorization: Bearer <access_token>" \
+  http://localhost:8000/api/v1/admin/backup \
+  -o school_inventory_backup.db
+```
+
+Or as a one-liner:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/token \
+  -d "username=admin&password=AdminPass123!" \
+  -H "Content-Type: application/x-www-form-urlencoded" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/admin/backup -o school_inventory_backup.db
+```
+
+This uses the SQLite backup API to create a consistent snapshot of the database, including any in-flight WAL data. Only admin users can access this endpoint.
+
+## Environment Variables
+
+| Variable                     | Default                          | Description                        |
+|------------------------------|----------------------------------|------------------------------------|
+| `DATABASE_URL`               | `sqlite:///./school_inventory.db`| SQLite connection string           |
+| `SECRET_KEY`                 | `dev-secret-key-...`             | JWT signing secret                 |
+| `ALGORITHM`                  | `HS256`                          | JWT algorithm                      |
+| `ACCESS_TOKEN_EXPIRE_MINUTES`| `30`                             | Access token TTL                   |
+| `REFRESH_TOKEN_EXPIRE_DAYS`  | `7`                              | Refresh token TTL                  |
+| `ADMIN_USERNAME`             | `admin`                          | Default admin username             |
+| `ADMIN_EMAIL`                | `admin@school.edu`               | Default admin email                |
+| `ADMIN_PASSWORD`             | `AdminPass123!`                  | Default admin password             |
+| `CORS_ORIGINS`               | `["http://localhost:5173"]`      | Allowed CORS origins               |
+| `ENVIRONMENT`                | `development`                    | `development` or `production`      |
+| `DEFAULT_CHECKOUT_DAYS`      | `7`                              | Default checkout duration          |
+
+## Running Tests
+
+### Backend Tests
+
+```bash
+cd backend
+source venv/bin/activate
+pytest
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+npm run test:unit
+```
+
+### E2E Tests (Puppeteer)
+
+```bash
+# 1. Reset the database
+./scripts/reset_db.sh
+
+# 2. Start backend and frontend
+cd backend && source venv/bin/activate && uvicorn app.main:app --port 8000 &
+cd frontend && npm run dev &
+
+# 3. Wait for servers, then run tests
+cd /path/to/school-inventory
+npx jest --config jest.config.ts --runInBand
+```
+
+## Database Reset
+
+To reset the database to a clean state with only the admin user and default categories:
+
+```bash
+./scripts/reset_db.sh
+```
+
+## Project Structure
+
+```
+school-inventory/
+├── backend/
+│   ├── alembic/              # Database migrations
+│   ├── app/
+│   │   ├── config.py         # Settings from env vars
+│   │   ├── database.py       # SQLAlchemy engine & session
+│   │   ├── main.py           # FastAPI app entry point
+│   │   ├── crud/             # Database operations
+│   │   ├── dependencies/     # Auth & pagination deps
+│   │   ├── models/           # SQLAlchemy models
+│   │   ├── routers/          # API route handlers
+│   │   ├── schemas/          # Pydantic request/response models
+│   │   └── utils/            # Seed data, helpers
+│   ├── tests/                # Backend tests
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── api/              # Axios API client modules
+│   │   ├── components/       # Reusable Vue components
+│   │   ├── composables/      # Vue composables (hooks)
+│   │   ├── layouts/          # App & Auth layouts
+│   │   ├── plugins/          # Vuetify plugin setup
+│   │   ├── router/           # Vue Router config
+│   │   ├── stores/           # Pinia stores
+│   │   ├── types/            # TypeScript type definitions
+│   │   └── views/            # Page-level components
+│   ├── Dockerfile
+│   └── package.json
+├── scripts/
+│   └── reset_db.sh           # Database reset script
+├── tests/
+│   └── e2e/                  # Puppeteer E2E tests
+├── docker-compose.yml
+└── README.md
+```
+
+## User Guide
+
+### Admin Setup
+
+1. Log in with the default admin credentials
+2. Navigate to **Locations** to create storage closets and shelves
+3. Navigate to **Catalog** to add items to the catalog
+4. Navigate to **Inventory** to add stock (assign items to locations with quantities)
+5. Navigate to **Users** to create teacher accounts
+
+### Teacher Workflow
+
+1. Log in with teacher credentials
+2. Browse **Catalog** or **Inventory** to find items
+3. Navigate to **Checkouts** to borrow items
+4. Return items when done via the **Checkouts** page
+
+### Checkout Process
+
+1. Go to **Checkouts** and click **New Checkout**
+2. Select the inventory item (shown with location and available quantity)
+3. Enter the quantity to borrow and a due date
+4. Click **Save** to complete the checkout
+5. The available quantity in inventory decreases automatically
+6. To return, find the checkout and click **Return**
+7. The inventory quantity is restored upon return
