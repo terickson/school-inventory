@@ -22,6 +22,7 @@ def list_users(
     total, users = user_crud.get_users(
         db, skip=pagination["skip"], limit=pagination["limit"],
         role=role, is_active=is_active,
+        sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {
         "total": total,

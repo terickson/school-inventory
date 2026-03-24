@@ -185,6 +185,73 @@ class TestCheckoutEndpoints:
         assert resp.status_code == 400
 
 
+class TestCheckoutSorting:
+    def test_sort_checkouts_by_due_date_asc(self, client, admin_headers, admin_user, inventory_record, db):
+        for days in [7, 1, 14]:
+            co = Checkout(
+                inventory_id=inventory_record.id,
+                user_id=admin_user.id,
+                quantity=1,
+                due_date=datetime.now(timezone.utc) + timedelta(days=days),
+                status="active",
+            )
+            db.add(co)
+        db.commit()
+        resp = client.get("/api/v1/checkouts?sort_by=due_date&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        dates = [c["due_date"] for c in resp.json()["items"]]
+        assert dates == sorted(dates)
+
+    def test_sort_checkouts_by_due_date_desc(self, client, admin_headers, admin_user, inventory_record, db):
+        for days in [7, 1, 14]:
+            co = Checkout(
+                inventory_id=inventory_record.id,
+                user_id=admin_user.id,
+                quantity=1,
+                due_date=datetime.now(timezone.utc) + timedelta(days=days),
+                status="active",
+            )
+            db.add(co)
+        db.commit()
+        resp = client.get("/api/v1/checkouts?sort_by=due_date&sort_order=desc", headers=admin_headers)
+        assert resp.status_code == 200
+        dates = [c["due_date"] for c in resp.json()["items"]]
+        assert dates == sorted(dates, reverse=True)
+
+    def test_sort_checkouts_default_order_without_sort(self, client, admin_headers, admin_user, inventory_record, db):
+        """Without sort params, checkouts default to created_at desc."""
+        for days in [7, 1, 14]:
+            co = Checkout(
+                inventory_id=inventory_record.id,
+                user_id=admin_user.id,
+                quantity=1,
+                due_date=datetime.now(timezone.utc) + timedelta(days=days),
+                status="active",
+            )
+            db.add(co)
+            db.commit()
+        resp = client.get("/api/v1/checkouts", headers=admin_headers)
+        assert resp.status_code == 200
+        dates = [c["created_at"] for c in resp.json()["items"]]
+        assert dates == sorted(dates, reverse=True)
+
+    def test_sort_overdue_by_due_date(self, client, admin_headers, admin_user, inventory_record, db):
+        for days in [1, 3, 2]:
+            co = Checkout(
+                inventory_id=inventory_record.id,
+                user_id=admin_user.id,
+                quantity=1,
+                due_date=datetime.now(timezone.utc) - timedelta(days=days),
+                status="active",
+            )
+            db.add(co)
+        db.commit()
+        resp = client.get("/api/v1/checkouts/overdue?sort_by=due_date&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        dates = [c["due_date"] for c in resp.json()["items"]]
+        assert dates == sorted(dates)
+
+
 class TestHealthEndpoint:
     def test_health(self, client):
         resp = client.get("/health")

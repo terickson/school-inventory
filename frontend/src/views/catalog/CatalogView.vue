@@ -45,7 +45,7 @@
               clearable
               class="mx-4"
               style="max-width: 200px"
-              @update:model-value="loadItems"
+              @update:model-value="() => loadItems()"
             />
           </v-toolbar>
         </template>
@@ -99,6 +99,7 @@ const notify = useNotify()
 const page = ref(1)
 const itemsPerPage = ref(20)
 const search = ref('')
+const sortBy = ref<{ key: string; order: 'asc' | 'desc' }[]>([])
 const categoryFilter = ref<number | null>(null)
 const dialogOpen = ref(false)
 const saving = ref(false)
@@ -121,12 +122,16 @@ onMounted(async () => {
   categoryOptions.value = catalogStore.categories.map((c) => ({ id: c.id, name: c.name }))
 })
 
-function loadItems() {
+function loadItems(options?: { sortBy?: { key: string; order: 'asc' | 'desc' }[] }) {
+  if (options?.sortBy) sortBy.value = options.sortBy
+  const sort = sortBy.value[0]
   catalogStore.fetchItems({
     skip: (page.value - 1) * itemsPerPage.value,
     limit: itemsPerPage.value,
     search: search.value || undefined,
     category_id: categoryFilter.value ?? undefined,
+    sort_by: sort?.key,
+    sort_order: sort?.order,
   })
 }
 

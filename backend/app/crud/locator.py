@@ -13,11 +13,14 @@ def get_locator(db: Session, locator_id: int) -> Locator | None:
     return db.query(Locator).filter(Locator.id == locator_id).first()
 
 
-def get_locators(db: Session, skip: int = 0, limit: int = 20, user_id: int | None = None):
+def get_locators(db: Session, skip: int = 0, limit: int = 20, user_id: int | None = None, sort_by: str | None = None, sort_order: str = "asc"):
     query = db.query(Locator)
     if user_id is not None:
         query = query.filter(Locator.user_id == user_id)
     total = query.count()
+    if sort_by and hasattr(Locator, sort_by):
+        col = getattr(Locator, sort_by)
+        query = query.order_by(col.desc() if sort_order == "desc" else col.asc())
     locators = query.offset(skip).limit(limit).all()
     return total, locators
 

@@ -32,6 +32,7 @@ def list_inventory(
     total, records = checkout_crud.get_inventory_records(
         db, skip=pagination["skip"], limit=pagination["limit"],
         locator_id=locator_id, item_id=item_id, low_stock=low_stock,
+        sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {
         "total": total,

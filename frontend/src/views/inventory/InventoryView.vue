@@ -45,7 +45,7 @@
               clearable
               class="mx-2"
               style="max-width: 180px"
-              @update:model-value="loadItems"
+              @update:model-value="() => loadItems()"
             />
             <v-checkbox
               v-model="lowStockOnly"
@@ -53,7 +53,7 @@
               hide-details
               density="compact"
               class="mx-2"
-              @update:model-value="loadItems"
+              @update:model-value="() => loadItems()"
             />
           </v-toolbar>
         </template>
@@ -161,6 +161,7 @@ const notify = useNotify()
 const page = ref(1)
 const itemsPerPage = ref(20)
 const search = ref('')
+const sortBy = ref<{ key: string; order: 'asc' | 'desc' }[]>([])
 const locatorFilter = ref<number | null>(null)
 const lowStockOnly = ref(false)
 const createDialogOpen = ref(false)
@@ -208,13 +209,17 @@ watch(() => createForm.locator_id, async (id) => {
   }
 })
 
-function loadItems() {
+function loadItems(options?: { sortBy?: { key: string; order: 'asc' | 'desc' }[] }) {
+  if (options?.sortBy) sortBy.value = options.sortBy
+  const sort = sortBy.value[0]
   inventoryStore.fetchRecords({
     skip: (page.value - 1) * itemsPerPage.value,
     limit: itemsPerPage.value,
     search: search.value || undefined,
     locator_id: locatorFilter.value ?? undefined,
     low_stock: lowStockOnly.value || undefined,
+    sort_by: sort?.key,
+    sort_order: sort?.order,
   })
 }
 

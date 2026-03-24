@@ -48,13 +48,16 @@ def get_item(db: Session, item_id: int) -> Item | None:
     return db.query(Item).filter(Item.id == item_id).first()
 
 
-def get_items(db: Session, skip: int = 0, limit: int = 20, search: str | None = None, category_id: int | None = None):
+def get_items(db: Session, skip: int = 0, limit: int = 20, search: str | None = None, category_id: int | None = None, sort_by: str | None = None, sort_order: str = "asc"):
     query = db.query(Item).options(joinedload(Item.category))
     if search:
         query = query.filter(Item.name.ilike(f"%{search}%"))
     if category_id is not None:
         query = query.filter(Item.category_id == category_id)
     total = query.count()
+    if sort_by and hasattr(Item, sort_by):
+        col = getattr(Item, sort_by)
+        query = query.order_by(col.desc() if sort_order == "desc" else col.asc())
     items = query.offset(skip).limit(limit).all()
     return total, items
 

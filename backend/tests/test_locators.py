@@ -102,3 +102,40 @@ class TestSublocatorEndpoints:
             headers=admin_headers,
         )
         assert resp.status_code == 404
+
+
+class TestLocatorSorting:
+    def test_sort_locators_by_name_asc(self, client, admin_headers, admin_user, db):
+        from app.models.locator import Locator
+        for name in ["Zulu Room", "Alpha Room", "Mike Room"]:
+            db.add(Locator(name=name, user_id=admin_user.id))
+        db.commit()
+        resp = client.get("/api/v1/locators?sort_by=name&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [loc["name"] for loc in resp.json()["items"]]
+        assert names == sorted(names)
+
+    def test_sort_locators_by_name_desc(self, client, admin_headers, admin_user, db):
+        from app.models.locator import Locator
+        for name in ["Zulu Room", "Alpha Room", "Mike Room"]:
+            db.add(Locator(name=name, user_id=admin_user.id))
+        db.commit()
+        resp = client.get("/api/v1/locators?sort_by=name&sort_order=desc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [loc["name"] for loc in resp.json()["items"]]
+        assert names == sorted(names, reverse=True)
+
+    def test_sort_locators_by_created_at(self, client, admin_headers, admin_user, db):
+        from app.models.locator import Locator
+        for name in ["First", "Second", "Third"]:
+            db.add(Locator(name=name, user_id=admin_user.id))
+            db.commit()
+        resp = client.get("/api/v1/locators?sort_by=created_at&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        dates = [it["created_at"] for it in items]
+        assert dates == sorted(dates)
+
+    def test_sort_locators_invalid_column_ignored(self, client, admin_headers, locator):
+        resp = client.get("/api/v1/locators?sort_by=bogus", headers=admin_headers)
+        assert resp.status_code == 200

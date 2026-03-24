@@ -26,6 +26,7 @@ def list_locators(
     user_id = None if current_user.role == "admin" else current_user.id
     total, locators = locator_crud.get_locators(
         db, skip=pagination["skip"], limit=pagination["limit"], user_id=user_id,
+        sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {
         "total": total,

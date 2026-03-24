@@ -96,3 +96,49 @@ class TestUserEndpoints:
         resp = client.get("/api/v1/users/me", headers=teacher_headers)
         assert resp.status_code == 200
         assert resp.json()["username"] == "teacher1"
+
+
+class TestUserSorting:
+    def test_sort_users_by_username_asc(self, client, admin_headers, db):
+        from app.models.user import User
+        from passlib.context import CryptContext
+        pwd = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
+        for name in ["charlie", "alice", "bob"]:
+            db.add(User(username=name, email=f"{name}@test.com", password_hash=pwd.hash("p"), role="teacher"))
+        db.commit()
+        resp = client.get("/api/v1/users?sort_by=username&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [u["username"] for u in resp.json()["items"]]
+        assert names == sorted(names)
+
+    def test_sort_users_by_username_desc(self, client, admin_headers, db):
+        from app.models.user import User
+        from passlib.context import CryptContext
+        pwd = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
+        for name in ["charlie", "alice", "bob"]:
+            db.add(User(username=name, email=f"{name}@test.com", password_hash=pwd.hash("p"), role="teacher"))
+        db.commit()
+        resp = client.get("/api/v1/users?sort_by=username&sort_order=desc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [u["username"] for u in resp.json()["items"]]
+        assert names == sorted(names, reverse=True)
+
+    def test_sort_users_by_email(self, client, admin_headers, db):
+        from app.models.user import User
+        from passlib.context import CryptContext
+        pwd = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
+        for name in ["zara", "anna", "mike"]:
+            db.add(User(username=name, email=f"{name}@test.com", password_hash=pwd.hash("p"), role="teacher"))
+        db.commit()
+        resp = client.get("/api/v1/users?sort_by=email&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        emails = [u["email"] for u in resp.json()["items"]]
+        assert emails == sorted(emails)
+
+    def test_sort_users_invalid_column_ignored(self, client, admin_headers, admin_user):
+        resp = client.get("/api/v1/users?sort_by=nonexistent&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+
+    def test_sort_users_invalid_order_rejected(self, client, admin_headers, admin_user):
+        resp = client.get("/api/v1/users?sort_by=username&sort_order=invalid", headers=admin_headers)
+        assert resp.status_code == 422

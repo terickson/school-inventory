@@ -23,7 +23,7 @@ def get_inventory(db: Session, inventory_id: int) -> Inventory | None:
 def get_inventory_records(
     db: Session, skip: int = 0, limit: int = 20,
     locator_id: int | None = None, item_id: int | None = None,
-    low_stock: bool = False,
+    low_stock: bool = False, sort_by: str | None = None, sort_order: str = "asc",
 ):
     query = db.query(Inventory).options(
         joinedload(Inventory.item),
@@ -37,6 +37,9 @@ def get_inventory_records(
     if low_stock:
         query = query.filter(Inventory.quantity <= Inventory.min_quantity, Inventory.min_quantity > 0)
     total = query.count()
+    if sort_by and hasattr(Inventory, sort_by):
+        col = getattr(Inventory, sort_by)
+        query = query.order_by(col.desc() if sort_order == "desc" else col.asc())
     records = query.offset(skip).limit(limit).all()
     return total, records
 
@@ -98,7 +101,7 @@ def get_checkout(db: Session, checkout_id: int) -> Checkout | None:
 def get_checkouts(
     db: Session, skip: int = 0, limit: int = 20,
     user_id: int | None = None, inventory_id: int | None = None,
-    status: str | None = None,
+    status: str | None = None, sort_by: str | None = None, sort_order: str = "asc",
 ):
     query = db.query(Checkout).options(
         joinedload(Checkout.inventory).joinedload(Inventory.item),
@@ -112,7 +115,12 @@ def get_checkouts(
     if status is not None:
         query = query.filter(Checkout.status == status)
     total = query.count()
-    checkouts = query.order_by(Checkout.created_at.desc()).offset(skip).limit(limit).all()
+    if sort_by and hasattr(Checkout, sort_by):
+        col = getattr(Checkout, sort_by)
+        query = query.order_by(col.desc() if sort_order == "desc" else col.asc())
+    else:
+        query = query.order_by(Checkout.created_at.desc())
+    checkouts = query.offset(skip).limit(limit).all()
     return total, checkouts
 
 
@@ -181,7 +189,7 @@ def extend_checkout(db: Session, checkout: Checkout, extend_in: CheckoutExtend) 
     return checkout
 
 
-def get_overdue_checkouts(db: Session, skip: int = 0, limit: int = 20, user_id: int | None = None):
+def get_overdue_checkouts(db: Session, skip: int = 0, limit: int = 20, user_id: int | None = None, sort_by: str | None = None, sort_order: str = "asc"):
     now = datetime.now(timezone.utc)
     query = db.query(Checkout).options(
         joinedload(Checkout.inventory).joinedload(Inventory.item),
@@ -200,6 +208,9 @@ def get_overdue_checkouts(db: Session, skip: int = 0, limit: int = 20, user_id: 
     ).update({"status": "overdue"}, synchronize_session="fetch")
     db.commit()
     total = query.count()
+    if sort_by and hasattr(Checkout, sort_by):
+        col = getattr(Checkout, sort_by)
+        query = query.order_by(col.desc() if sort_order == "desc" else col.asc())
     checkouts = query.offset(skip).limit(limit).all()
     return total, checkouts
 

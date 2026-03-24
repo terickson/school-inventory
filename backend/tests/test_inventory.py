@@ -76,3 +76,25 @@ class TestInventoryEndpoints:
     def test_inventory_not_found(self, client, admin_headers):
         resp = client.get("/api/v1/inventory/9999", headers=admin_headers)
         assert resp.status_code == 404
+
+
+class TestInventorySorting:
+    def test_sort_inventory_by_quantity_asc(self, client, admin_headers, item, locator, db):
+        from app.models.checkout import Inventory
+        for qty in [50, 10, 30]:
+            db.add(Inventory(item_id=item.id, locator_id=locator.id, quantity=qty, min_quantity=5))
+        db.commit()
+        resp = client.get("/api/v1/inventory?sort_by=quantity&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        quantities = [r["quantity"] for r in resp.json()["items"]]
+        assert quantities == sorted(quantities)
+
+    def test_sort_inventory_by_quantity_desc(self, client, admin_headers, item, locator, db):
+        from app.models.checkout import Inventory
+        for qty in [50, 10, 30]:
+            db.add(Inventory(item_id=item.id, locator_id=locator.id, quantity=qty, min_quantity=5))
+        db.commit()
+        resp = client.get("/api/v1/inventory?sort_by=quantity&sort_order=desc", headers=admin_headers)
+        assert resp.status_code == 200
+        quantities = [r["quantity"] for r in resp.json()["items"]]
+        assert quantities == sorted(quantities, reverse=True)

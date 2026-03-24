@@ -84,3 +84,36 @@ class TestItemEndpoints:
     def test_teacher_can_list_items(self, client, teacher_headers, item):
         resp = client.get("/api/v1/items", headers=teacher_headers)
         assert resp.status_code == 200
+
+
+class TestItemSorting:
+    def test_sort_items_by_name_asc(self, client, admin_headers, category, db):
+        from app.models.item import Item
+        for name in ["Scissors", "Glue Sticks", "Markers"]:
+            db.add(Item(name=name, category_id=category.id, unit_of_measure="unit"))
+        db.commit()
+        resp = client.get("/api/v1/items?sort_by=name&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [it["name"] for it in resp.json()["items"]]
+        assert names == sorted(names)
+
+    def test_sort_items_by_name_desc(self, client, admin_headers, category, db):
+        from app.models.item import Item
+        for name in ["Scissors", "Glue Sticks", "Markers"]:
+            db.add(Item(name=name, category_id=category.id, unit_of_measure="unit"))
+        db.commit()
+        resp = client.get("/api/v1/items?sort_by=name&sort_order=desc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [it["name"] for it in resp.json()["items"]]
+        assert names == sorted(names, reverse=True)
+
+    def test_sort_items_with_search(self, client, admin_headers, category, db):
+        from app.models.item import Item
+        for name in ["Red Paint", "Red Markers", "Red Paper"]:
+            db.add(Item(name=name, category_id=category.id, unit_of_measure="unit"))
+        db.commit()
+        resp = client.get("/api/v1/items?search=Red&sort_by=name&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [it["name"] for it in resp.json()["items"]]
+        assert names == sorted(names)
+        assert all("Red" in n for n in names)

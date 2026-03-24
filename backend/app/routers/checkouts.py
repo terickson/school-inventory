@@ -48,6 +48,7 @@ def list_overdue(
     user_id = None if current_user.role == "admin" else current_user.id
     total, checkouts = checkout_crud.get_overdue_checkouts(
         db, skip=pagination["skip"], limit=pagination["limit"], user_id=user_id,
+        sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {
         "total": total,
@@ -91,6 +92,7 @@ def list_checkouts(
     total, checkouts = checkout_crud.get_checkouts(
         db, skip=pagination["skip"], limit=pagination["limit"],
         user_id=user_id, inventory_id=inventory_id, status=status_filter,
+        sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {
         "total": total,

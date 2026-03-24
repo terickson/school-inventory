@@ -91,10 +91,36 @@ All endpoints under `/api/v1/`. Swagger docs at `/docs`. Key endpoint groups:
 - `/checkouts/` — Checkout, return, extend, overdue, summary
 - `/admin/backup` — Download SQLite database backup (admin only)
 
+### Pagination & Sorting
+
+All list endpoints accept these query parameters:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `skip` | int | 0 | Number of records to skip |
+| `limit` | int | 20 | Max records to return (1–100) |
+| `sort_by` | string | null | Column to sort by (see table below) |
+| `sort_order` | string | "asc" | Sort direction: `asc` or `desc` |
+
+**Sortable columns per endpoint:**
+
+| Endpoint | Sortable columns |
+|---|---|
+| `/users` | `username`, `full_name`, `email`, `created_at` |
+| `/locators` | `name`, `created_at` |
+| `/items` | `name`, `created_at` |
+| `/inventory` | `quantity`, `min_quantity`, `created_at` |
+| `/checkouts` | `due_date`, `created_at`, `checkout_date` |
+| `/checkouts/overdue` | `due_date`, `created_at` |
+
+Invalid `sort_by` values are silently ignored (no error, unsorted results). Invalid `sort_order` values return 422.
+
+Example: `GET /api/v1/users?sort_by=username&sort_order=desc&limit=10`
+
 ## Development Conventions
 
 - Backend uses **sync** route handlers (`def`, not `async def`) — SQLite doesn't benefit from async
-- All API responses are paginated: `{ total, skip, limit, items: [...] }`
+- All API responses are paginated: `{ total, skip, limit, items: [...] }` with optional server-side sorting via `sort_by` and `sort_order` query params
 - JWT auth: access tokens (30min) + refresh tokens (7 days), both with `type` claim
 - Checkout and return operations are **atomic** (inventory quantity updated in same transaction)
 - Users are **soft-deleted** (is_active=false), never hard-deleted
@@ -129,6 +155,6 @@ Frontend uses `VITE_API_BASE_URL` (default: `/api/v1`).
 
 ## Testing
 
-- Backend: 86 pytest tests covering all endpoints, auth, CRUD, edge cases
-- E2E: 27 Puppeteer tests covering login, user management, locators, catalog, inventory, checkout/return, dashboard
+- Backend: 104 pytest tests covering all endpoints, auth, CRUD, sorting, edge cases
+- E2E: 34 Puppeteer tests covering login, user management, locators, catalog, inventory, checkout/return, dashboard, sorting
 - Reset DB before E2E runs: `./scripts/reset_db.sh`

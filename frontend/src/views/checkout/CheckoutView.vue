@@ -127,6 +127,7 @@ const notify = useNotify()
 const tab = ref<string>('active')
 const page = ref(1)
 const itemsPerPage = ref(20)
+const sortBy = ref<{ key: string; order: 'asc' | 'desc' }[]>([])
 const checkoutDialogOpen = ref(false)
 const returnDialogOpen = ref(false)
 const extendDialogOpen = ref(false)
@@ -157,11 +158,15 @@ function getStatusFilter(): CheckoutStatus | undefined {
   return undefined
 }
 
-function loadItems() {
+function loadItems(options?: { sortBy?: { key: string; order: 'asc' | 'desc' }[] }) {
+  if (options?.sortBy) sortBy.value = options.sortBy
+  const sort = sortBy.value[0]
   checkoutStore.fetchCheckouts({
     skip: (page.value - 1) * itemsPerPage.value,
     limit: itemsPerPage.value,
     status: getStatusFilter(),
+    sort_by: sort?.key,
+    sort_order: sort?.order,
   })
 }
 

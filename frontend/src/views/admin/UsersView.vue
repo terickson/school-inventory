@@ -89,6 +89,7 @@ const notify = useNotify()
 const page = ref(1)
 const itemsPerPage = ref(20)
 const search = ref('')
+const sortBy = ref<{ key: string; order: 'asc' | 'desc' }[]>([])
 const dialogOpen = ref(false)
 const saving = ref(false)
 const editingUser = ref<User | null>(null)
@@ -105,11 +106,15 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
-function loadItems() {
+function loadItems(options?: { sortBy?: { key: string; order: 'asc' | 'desc' }[] }) {
+  if (options?.sortBy) sortBy.value = options.sortBy
+  const sort = sortBy.value[0]
   usersStore.fetchUsers({
     skip: (page.value - 1) * itemsPerPage.value,
     limit: itemsPerPage.value,
     search: search.value || undefined,
+    sort_by: sort?.key,
+    sort_order: sort?.order,
   })
 }
 

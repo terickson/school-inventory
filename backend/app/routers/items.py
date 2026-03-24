@@ -54,6 +54,7 @@ def list_items(
     total, items = item_crud.get_items(
         db, skip=pagination["skip"], limit=pagination["limit"],
         search=search, category_id=category_id,
+        sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {
         "total": total,

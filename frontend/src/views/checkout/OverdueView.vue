@@ -55,6 +55,7 @@ const checkoutStore = useCheckoutStore()
 
 const page = ref(1)
 const itemsPerPage = ref(20)
+const sortBy = ref<{ key: string; order: 'asc' | 'desc' }[]>([])
 
 const headers = [
   { title: 'Item', key: 'item', sortable: false },
@@ -65,10 +66,14 @@ const headers = [
   { title: 'Notes', key: 'notes', sortable: false },
 ]
 
-function loadItems() {
+function loadItems(options?: { sortBy?: { key: string; order: 'asc' | 'desc' }[] }) {
+  if (options?.sortBy) sortBy.value = options.sortBy
+  const sort = sortBy.value[0]
   checkoutStore.fetchOverdue({
     skip: (page.value - 1) * itemsPerPage.value,
     limit: itemsPerPage.value,
+    sort_by: sort?.key,
+    sort_order: sort?.order,
   })
 }
 
