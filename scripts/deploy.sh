@@ -165,7 +165,7 @@ download_and_extract() {
 
     # Sync files (preserves nothing in INSTALL_DIR that isn't in the zip)
     log "Deploying to ${INSTALL_DIR}..."
-    rsync -a --delete \
+    rsync -a --delete --no-owner --no-group \
         --exclude='.env' \
         --exclude='*.db' \
         --exclude='*.db-wal' \
