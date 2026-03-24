@@ -7,11 +7,15 @@
 # as a reverse proxy in front of the application containers.
 #
 # Usage:
-#   curl -fsSL <raw-url>/scripts/rpi-setup.sh | sudo bash
+#   sudo ./rpi-setup.sh [--ntfy-topic TOPIC_NAME]
 #   — or —
-#   sudo ./rpi-setup.sh
+#   curl -fsSL <raw-url>/scripts/rpi-setup.sh | sudo bash -s -- --ntfy-topic my-school-pi
 #
-# Tested on: Raspberry Pi OS (Bookworm, 64-bit)
+# Options:
+#   --ntfy-topic TOPIC   Install a NetworkManager dispatcher hook that sends
+#                        the Pi's IP to ntfy.sh/TOPIC on every DHCP lease.
+#
+# Tested on: Raspberry Pi OS (Trixie, 64-bit)
 #
 set -euo pipefail
 
@@ -22,6 +26,7 @@ INSTALL_DIR="/opt/apps/school-inventory"
 BACKUP_DIR="/opt/apps/school-inventory-backups"
 NGINX_CONF="/etc/nginx/sites-available/school-inventory"
 NGINX_LINK="/etc/nginx/sites-enabled/school-inventory"
+NTFY_TOPIC=""
 
 # ──────────────────────────────────────────────
 # Helpers
@@ -35,6 +40,25 @@ require_root() {
     if [[ $EUID -ne 0 ]]; then
         fail "This script must be run as root (sudo)."
     fi
+}
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ntfy-topic)
+                [[ -z "${2:-}" ]] && fail "--ntfy-topic requires a topic name."
+                NTFY_TOPIC="$2"
+                shift 2
+                ;;
+            -h|--help)
+                head -20 "$0" | grep '^#' | sed 's/^# \?//'
+                exit 0
+                ;;
+            *)
+                fail "Unknown option: $1"
+                ;;
+        esac
+    done
 }
 
 # ──────────────────────────────────────────────
@@ -169,6 +193,77 @@ NGINX
 }
 
 # ──────────────────────────────────────────────
+# Step 5 — ntfy IP notification (optional)
+# ──────────────────────────────────────────────
+NM_DISPATCHER="/etc/NetworkManager/dispatcher.d/50-ntfy-ip"
+
+configure_ntfy() {
+    if [[ -z "$NTFY_TOPIC" ]]; then
+        return
+    fi
+
+    log "Installing ntfy IP notification dispatcher (topic: ${NTFY_TOPIC})..."
+
+    cat > "$NM_DISPATCHER" <<EOF
+#!/bin/bash
+# Notify via ntfy.sh when this Pi gets a DHCP address.
+# Installed by rpi-setup.sh
+
+NTFY_TOPIC="${NTFY_TOPIC}"
+INTERFACE="\$1"
+ACTION="\$2"
+
+case "\$ACTION" in
+    up|dhcp4-change)
+        [ "\$INTERFACE" = "lo" ] && exit 0
+
+        IP=\$(ip -4 addr show "\$INTERFACE" | grep -oP 'inet \K[\d.]+')
+        [ -z "\$IP" ] && exit 0
+
+        HOSTNAME=\$(hostname)
+        curl -s \\
+            -H "Title: \$HOSTNAME is online" \\
+            -H "Tags: raspberry_pi" \\
+            -d "\$INTERFACE: \$IP" \\
+            "https://ntfy.sh/\$NTFY_TOPIC"
+        ;;
+esac
+EOF
+
+    chmod 755 "$NM_DISPATCHER"
+    log "Dispatcher installed at ${NM_DISPATCHER}."
+}
+
+# ──────────────────────────────────────────────
+# Step 6 — Nightly database backup cron job
+# ──────────────────────────────────────────────
+BACKUP_SCRIPT="${INSTALL_DIR}/scripts/nightly-backup.sh"
+CRON_FILE="/etc/cron.d/school-inventory-backup"
+
+configure_nightly_backup() {
+    log "Configuring nightly database backup..."
+
+    # If ntfy topic is set, patch it into the backup script so failure
+    # notifications are sent automatically.
+    if [[ -n "$NTFY_TOPIC" ]]; then
+        sed -i "s/^NTFY_TOPIC=\"\"/NTFY_TOPIC=\"${NTFY_TOPIC}\"/" "$BACKUP_SCRIPT" 2>/dev/null || true
+    fi
+
+    # Install cron job — runs at 2 AM daily as root
+    cat > "$CRON_FILE" <<EOF
+# School Supply Inventory — nightly database backup
+# Installed by rpi-setup.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+0 2 * * * root ${BACKUP_SCRIPT} >> /var/log/school-inventory-backup.log 2>&1
+EOF
+
+    chmod 644 "$CRON_FILE"
+    log "Cron job installed at ${CRON_FILE} (daily at 2:00 AM)."
+}
+
+# ──────────────────────────────────────────────
 # Summary
 # ──────────────────────────────────────────────
 print_summary() {
@@ -192,6 +287,12 @@ print_summary() {
     echo "    - Config: ${NGINX_CONF}"
     echo "    - Proxies port 80 → frontend (8080) + backend (8000)"
     echo ""
+    echo "  Nightly backups:"
+    echo "    - Cron: ${CRON_FILE} (daily at 2:00 AM)"
+    echo "    - Script: ${BACKUP_SCRIPT}"
+    echo "    - Backups: ${BACKUP_DIR} (7-day retention)"
+    echo "    - Log: /var/log/school-inventory-backup.log"
+    echo ""
     echo "  Next steps:"
     echo "    1. Run the deploy script to install the application:"
     echo "       sudo ${INSTALL_DIR}/scripts/deploy.sh"
@@ -201,12 +302,22 @@ print_summary() {
     echo "    2. After deploy, access the app at:"
     echo "       http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 'your-pi-ip')"
     echo ""
+
+    if [[ -n "$NTFY_TOPIC" ]]; then
+        echo "  ntfy notifications:"
+        echo "    - Topic: https://ntfy.sh/${NTFY_TOPIC}"
+        echo "    - Dispatcher: ${NM_DISPATCHER}"
+        echo "    - The Pi will send its IP on every DHCP lease."
+        echo "    - Install the ntfy app on your phone and subscribe to: ${NTFY_TOPIC}"
+        echo ""
+    fi
 }
 
 # ──────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────
 main() {
+    parse_args "$@"
     require_root
     log "Starting Raspberry Pi setup for School Supply Inventory..."
     echo ""
@@ -215,7 +326,9 @@ main() {
     install_docker
     create_directories
     configure_nginx
+    configure_ntfy
+    configure_nightly_backup
     print_summary
 }
 
-main
+main "$@"

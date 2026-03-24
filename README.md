@@ -132,6 +132,45 @@ This installs:
 
 It also creates the `/opt/apps/school-inventory` and `/opt/apps/school-inventory-backups` directories. After setup, run the deploy script to install the application.
 
+### IP Notification via ntfy
+
+The setup script can optionally install a [ntfy.sh](https://ntfy.sh) notification hook that sends the Pi's IP address to your phone whenever it gets a DHCP lease. This is useful for headless setups where the Pi's IP may change.
+
+```bash
+sudo ./rpi-setup.sh --ntfy-topic my-school-pi
+```
+
+To receive notifications:
+
+1. Install the **ntfy** app ([Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy) / [iOS](https://apps.apple.com/app/ntfy/id1625396347))
+2. Subscribe to the same topic name you passed to the script (e.g., `my-school-pi`)
+3. The Pi will send a push notification with its IP every time an interface comes up or renews a DHCP lease
+
+This installs a NetworkManager dispatcher script at `/etc/NetworkManager/dispatcher.d/50-ntfy-ip`. No account or API key is required — ntfy.sh is a free, open service. Choose a unique, hard-to-guess topic name since anyone who knows the topic can see the messages.
+
+### Nightly Database Backups
+
+The setup script automatically installs a cron job that backs up the SQLite database every night at 2:00 AM, with 7-day retention.
+
+- **Backup location:** `/opt/apps/school-inventory-backups/`
+- **Schedule:** Daily at 2:00 AM (`/etc/cron.d/school-inventory-backup`)
+- **Retention:** Backups older than 7 days are automatically deleted
+- **Log:** `/var/log/school-inventory-backup.log`
+
+The backup uses the SQLite backup API (`sqlite3 .backup`) via a temporary Docker container, so it's safe to run while the application is active. If an `--ntfy-topic` was provided during setup, the backup script will send a push notification on failure.
+
+To run a backup manually:
+
+```bash
+sudo /opt/apps/school-inventory/scripts/nightly-backup.sh
+```
+
+To list existing backups:
+
+```bash
+ls -lh /opt/apps/school-inventory-backups/
+```
+
 ## Deploy via GitHub Zip
 
 A deploy script handles both initial installation and updates. It downloads the repo as a zip from GitHub, extracts to `/opt/apps/school-inventory`, and manages Docker Compose.
