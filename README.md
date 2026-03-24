@@ -12,6 +12,168 @@ A web-based inventory management system for tracking school supplies across phys
 - **Responsive UI** — works on laptops and phones
 - **Self-hosted and free** — no per-seat licensing
 
+## User Roles & Permissions
+
+The system uses **role-based access control (RBAC)** with two roles and resource ownership rules.
+
+### Role Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        ADMINISTRATOR                                │
+│                                                                     │
+│  Full system access. Manages users, catalog, categories,            │
+│  all locations, all inventory, all checkouts. Can extend             │
+│  due dates and download database backups.                           │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                          TEACHER                                    │
+│                                                                     │
+│  Manages own storage locations and shelves. Can browse               │
+│  the full catalog and create checkouts for themselves.              │
+│  Can view and return their own checkouts, or checkouts              │
+│  from locations they own.                                           │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                       UNAUTHENTICATED                               │
+│                                                                     │
+│  Can only access the login page. All other routes                   │
+│  and API endpoints require authentication.                          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### API Permissions by Endpoint
+
+```
+Legend:  ● = full access    ◐ = own resources only    ○ = no access
+
+┌──────────────────────────────────┬───────────┬───────────┐
+│ Endpoint                         │   Admin   │  Teacher  │
+├──────────────────────────────────┼───────────┼───────────┤
+│ AUTH                             │           │           │
+│  POST /auth/token (login)        │  public   │  public   │
+│  POST /auth/refresh              │  public   │  public   │
+│  GET  /auth/me                   │     ●     │     ●     │
+├──────────────────────────────────┼───────────┼───────────┤
+│ USERS                            │           │           │
+│  GET    /users                   │     ●     │     ○     │
+│  POST   /users                   │     ●     │     ○     │
+│  GET    /users/{id}              │     ●     │     ○     │
+│  PATCH  /users/{id}              │     ●     │     ○     │
+│  DELETE /users/{id}              │     ●     │     ○     │
+│  POST   /users/{id}/reset-pwd    │     ●     │     ○     │
+│  GET    /users/me                │     ●     │     ●     │
+│  PATCH  /users/me                │     ●     │     ●     │
+├──────────────────────────────────┼───────────┼───────────┤
+│ CATEGORIES                       │           │           │
+│  GET    /categories              │     ●     │     ●     │
+│  POST   /categories              │     ●     │     ○     │
+│  GET    /categories/{id}         │     ●     │     ●     │
+│  PATCH  /categories/{id}         │     ●     │     ○     │
+│  DELETE /categories/{id}         │     ●     │     ○     │
+├──────────────────────────────────┼───────────┼───────────┤
+│ ITEMS (Catalog)                  │           │           │
+│  GET    /items                   │     ●     │     ●     │
+│  POST   /items                   │     ●     │     ○     │
+│  GET    /items/{id}              │     ●     │     ●     │
+│  PATCH  /items/{id}              │     ●     │     ○     │
+│  DELETE /items/{id}              │     ●     │     ○     │
+│  POST   /items/{id}/image        │     ●     │     ○     │
+│  DELETE /items/{id}/image        │     ●     │     ○     │
+├──────────────────────────────────┼───────────┼───────────┤
+│ LOCATIONS                        │           │           │
+│  GET    /locators                │     ●     │  ◐ own    │
+│  POST   /locators                │     ●     │     ●     │
+│  GET    /locators/{id}           │     ●     │  ◐ own    │
+│  PATCH  /locators/{id}           │     ●     │  ◐ own    │
+│  DELETE /locators/{id}           │     ●     │     ○     │
+├──────────────────────────────────┼───────────┼───────────┤
+│ SHELVES                          │           │           │
+│  GET    /locators/{id}/sublocs   │     ●     │  ◐ own    │
+│  POST   /locators/{id}/sublocs   │     ●     │  ◐ own    │
+│  PATCH  .../sublocs/{id}         │     ●     │  ◐ own    │
+│  DELETE .../sublocs/{id}         │     ●     │  ◐ own    │
+├──────────────────────────────────┼───────────┼───────────┤
+│ INVENTORY                        │           │           │
+│  GET    /inventory               │     ●     │     ●     │
+│  POST   /inventory               │     ●     │  ◐ own    │
+│  GET    /inventory/{id}          │     ●     │  ◐ own    │
+│  PATCH  /inventory/{id}          │     ●     │  ◐ own    │
+│  DELETE /inventory/{id}          │     ●     │  ◐ own    │
+│  POST   /inventory/{id}/adjust   │     ●     │  ◐ own    │
+├──────────────────────────────────┼───────────┼───────────┤
+│ CHECKOUTS                        │           │           │
+│  GET    /checkouts               │     ●     │  ◐ own    │
+│  POST   /checkouts               │     ●     │  ◐ self   │
+│  GET    /checkouts/{id}          │     ●     │  ◐ own¹   │
+│  POST   /checkouts/{id}/return   │     ●     │  ◐ own¹   │
+│  POST   /checkouts/{id}/extend   │     ●     │     ○     │
+│  GET    /checkouts/overdue       │     ●     │  ◐ own    │
+│  GET    /checkouts/summary       │     ●     │  ◐ own    │
+├──────────────────────────────────┼───────────┼───────────┤
+│ ADMIN                            │           │           │
+│  GET    /admin/backup            │     ●     │     ○     │
+├──────────────────────────────────┼───────────┼───────────┤
+│ UPLOADS                          │           │           │
+│  GET    /uploads/{filename}      │     ●     │     ●     │
+└──────────────────────────────────┴───────────┴───────────┘
+
+¹ Teachers can access checkouts they created OR checkouts
+  from inventory in locations they own.
+```
+
+### UI Visibility by Role
+
+```
+┌──────────────────────────────────┬───────────┬───────────┐
+│ UI Element                       │   Admin   │  Teacher  │
+├──────────────────────────────────┼───────────┼───────────┤
+│ SIDEBAR NAVIGATION               │           │           │
+│  Dashboard                       │  visible  │  visible  │
+│  Locations                       │  visible  │  visible  │
+│  Catalog                         │  visible  │  visible  │
+│  Categories                      │  visible  │  hidden   │
+│  Inventory                       │  visible  │  visible  │
+│  Checkouts                       │  visible  │  visible  │
+│  Users                           │  visible  │  hidden   │
+├──────────────────────────────────┼───────────┼───────────┤
+│ PAGES (route-level access)       │           │           │
+│  /users                          │  allowed  │  blocked  │
+│  /categories                     │  allowed  │  blocked  │
+│  All other pages                 │  allowed  │  allowed  │
+├──────────────────────────────────┼───────────┼───────────┤
+│ ACTION BUTTONS                   │           │           │
+│  Add Item (catalog)              │  visible  │  hidden   │
+│  Edit/Delete Item (catalog)      │  visible  │  hidden   │
+│  Upload/Remove Item Image        │  visible  │  hidden   │
+│  Add Category                    │  visible  │  hidden   │
+│  Edit/Delete Category            │  visible  │  hidden   │
+│  Add Stock (inventory)           │  visible  │  hidden   │
+│  Extend Checkout                 │  visible  │  hidden   │
+│  Checkout on behalf of others    │  visible  │  hidden   │
+│  New Checkout (for self)         │  visible  │  visible  │
+│  Return Items                    │  visible  │  visible  │
+└──────────────────────────────────┴───────────┴───────────┘
+```
+
+### Ownership Model
+
+Teachers have a **resource ownership** model for storage locations:
+
+```
+Teacher creates a Location (closet)
+        │
+        ├── Teacher owns all Shelves within it
+        ├── Teacher can manage Inventory in those shelves
+        └── Teacher can view/return Checkouts from those locations
+```
+
+- When a teacher creates a location, they become its owner
+- Ownership grants access to all nested resources (shelves, inventory)
+- Teachers can see and return checkouts from locations they own, even if another user initiated the checkout
+- Admins bypass all ownership checks and can access everything
+
 ## Architecture
 
 ```
@@ -322,6 +484,8 @@ This uses the SQLite backup API to create a consistent snapshot of the database,
 | `CORS_ORIGINS`               | `["http://localhost:5173"]`      | Allowed CORS origins               |
 | `ENVIRONMENT`                | `development`                    | `development` or `production`      |
 | `DEFAULT_CHECKOUT_DAYS`      | `7`                              | Default checkout duration          |
+| `UPLOAD_DIR`                 | `uploads`                        | Directory for item images          |
+| `MAX_IMAGE_SIZE_MB`          | `5`                              | Max image upload size in MB        |
 
 ## Running Tests
 
