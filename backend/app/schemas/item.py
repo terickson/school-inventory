@@ -57,6 +57,7 @@ class ItemResponse(BaseModel):
     description: str | None
     category_id: int
     unit_of_measure: str
+    image_url: str | None = None
     category: CategoryNested | None = None
     created_at: datetime
     updated_at: datetime

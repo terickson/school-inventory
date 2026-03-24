@@ -87,7 +87,8 @@ All endpoints under `/api/v1/`. Swagger docs at `/docs`. Key endpoint groups:
 - `/locators/` — Storage locations (closets)
 - `/locators/{id}/sublocators/` — Shelves within locations
 - `/categories/` — Category management (list, create, get, update, delete; admin-only for mutations)
-- `/items/` — Item catalog
+- `/items/` — Item catalog, plus `POST /items/{id}/image` and `DELETE /items/{id}/image` for image management
+- `/uploads/` — Static file serving for uploaded item images
 - `/inventory/` — Stock levels per location
 - `/checkouts/` — Checkout, return, extend, overdue, summary
 - `/admin/backup` — Download SQLite database backup (admin only)
@@ -152,11 +153,13 @@ Backend reads from `backend/.env`. Key vars:
 - `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` — Initial admin account
 - `CORS_ORIGINS` — Allowed frontend origins
 - `DEFAULT_CHECKOUT_DAYS` — Default loan period
+- `UPLOAD_DIR` — Directory for uploaded item images (default: `uploads`)
+- `MAX_IMAGE_SIZE_MB` — Maximum image upload size in MB (default: 5)
 
 Frontend uses `VITE_API_BASE_URL` (default: `/api/v1`).
 
 ## Testing
 
-- Backend: 117 pytest tests covering all endpoints, auth, CRUD, sorting, categories, edge cases
-- E2E: 41 Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting
+- Backend: 127 pytest tests covering all endpoints, auth, CRUD, sorting, categories, image upload, edge cases
+- E2E: 46 Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting, item images
 - Reset DB before E2E runs: `./scripts/reset_db.sh`

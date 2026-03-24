@@ -50,6 +50,13 @@
           </v-toolbar>
         </template>
 
+        <template #item.image="{ item }">
+          <v-avatar size="40" rounded="sm" color="grey-lighten-3">
+            <v-img v-if="item.image_url" :src="item.image_url" cover />
+            <v-icon v-else size="24" color="grey">mdi-package-variant-closed</v-icon>
+          </v-avatar>
+        </template>
+
         <template #item.category="{ item }">
           <v-chip v-if="item.category" size="small" variant="tonal" color="secondary">
             {{ item.category.name }}
@@ -110,6 +117,7 @@ const categoryOptions = ref<{ id: number; name: string }[]>([])
 let searchTimeout: ReturnType<typeof setTimeout>
 
 const headers = [
+  { title: '', key: 'image', sortable: false, width: '60px' },
   { title: 'Name', key: 'name', sortable: true },
   { title: 'Description', key: 'description', sortable: false },
   { title: 'Category', key: 'category', sortable: false },
@@ -166,13 +174,22 @@ async function handleSave() {
   saving.value = true
   try {
     const data = itemFormRef.value.getData()
+    let savedItem: Item
     if (editingItem.value) {
-      await catalogStore.updateItem(editingItem.value.id, data)
-      notify.success('Item updated')
+      savedItem = await catalogStore.updateItem(editingItem.value.id, data)
     } else {
-      await catalogStore.createItem(data)
-      notify.success('Item created')
+      savedItem = await catalogStore.createItem(data)
     }
+
+    // Handle image upload/removal
+    const imageFile = itemFormRef.value.getImageFile()
+    if (imageFile) {
+      await catalogStore.uploadItemImage(savedItem.id, imageFile)
+    } else if (itemFormRef.value.shouldRemoveImage()) {
+      await catalogStore.deleteItemImage(savedItem.id)
+    }
+
+    notify.success(editingItem.value ? 'Item updated' : 'Item created')
     closeDialog()
     loadItems()
   } catch (e) {

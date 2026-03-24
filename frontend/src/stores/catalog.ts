@@ -79,6 +79,14 @@ export const useCatalogStore = defineStore('catalog', () => {
     await catalogApi.deleteCategory(id)
   }
 
+  async function uploadItemImage(itemId: number, file: File): Promise<Item> {
+    return await catalogApi.uploadItemImage(itemId, file)
+  }
+
+  async function deleteItemImage(itemId: number): Promise<void> {
+    await catalogApi.deleteItemImage(itemId)
+  }
+
   return {
     items,
     categories,
@@ -97,5 +105,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     createCategory,
     updateCategory,
     deleteCategory,
+    uploadItemImage,
+    deleteItemImage,
   }
 })

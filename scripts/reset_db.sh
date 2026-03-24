@@ -7,6 +7,9 @@ DB_PATH="${PROJECT_DIR}/backend/school_inventory.db"
 # Remove existing database
 rm -f "${DB_PATH}" "${DB_PATH}-wal" "${DB_PATH}-shm"
 
+# Remove uploaded images
+rm -rf "${PROJECT_DIR}/backend/uploads"
+
 # Run migrations and seed
 cd "${PROJECT_DIR}/backend"
 source venv/bin/activate

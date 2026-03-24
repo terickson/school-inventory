@@ -30,6 +30,7 @@ class Item(Base):
     description: Mapped[str | None] = mapped_column(String, nullable=True)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey("categories.id"), nullable=False, index=True)
     unit_of_measure: Mapped[str] = mapped_column(String, nullable=False, default="unit")
+    image_filename: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )

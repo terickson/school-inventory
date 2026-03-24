@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
     environment: str = "development"
     default_checkout_days: int = 7
+    upload_dir: str = "uploads"
+    max_image_size_mb: int = 5
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

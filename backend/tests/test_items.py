@@ -201,3 +201,141 @@ class TestItemSorting:
         names = [it["name"] for it in resp.json()["items"]]
         assert names == sorted(names)
         assert all("Red" in n for n in names)
+
+
+class TestItemImage:
+    """Tests for item image upload and deletion."""
+
+    @staticmethod
+    def _make_jpeg_bytes():
+        """Minimal valid JPEG bytes."""
+        return b"\xff\xd8\xff\xe0" + b"\x00" * 100
+
+    def _setup_upload_dir(self, tmp_path, monkeypatch):
+        upload_dir = str(tmp_path / "uploads")
+        import os
+        os.makedirs(upload_dir, exist_ok=True)
+        from app.config import settings
+        monkeypatch.setattr(settings, "upload_dir", upload_dir)
+        return upload_dir
+
+    def test_upload_image(self, client, admin_headers, item, tmp_path, monkeypatch):
+        upload_dir = self._setup_upload_dir(tmp_path, monkeypatch)
+        resp = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("test.jpg", self._make_jpeg_bytes(), "image/jpeg")},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["image_url"] is not None
+        assert data["image_url"].startswith("/api/v1/uploads/item_")
+        # Verify file exists on disk
+        import os
+        filename = data["image_url"].split("/")[-1]
+        assert os.path.exists(os.path.join(upload_dir, filename))
+
+    def test_upload_image_replaces_existing(self, client, admin_headers, item, tmp_path, monkeypatch):
+        upload_dir = self._setup_upload_dir(tmp_path, monkeypatch)
+        # Upload first image
+        resp1 = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("a.jpg", self._make_jpeg_bytes(), "image/jpeg")},
+            headers=admin_headers,
+        )
+        old_filename = resp1.json()["image_url"].split("/")[-1]
+        # Upload replacement
+        resp2 = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("b.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 100, "image/png")},
+            headers=admin_headers,
+        )
+        assert resp2.status_code == 200
+        new_filename = resp2.json()["image_url"].split("/")[-1]
+        assert new_filename != old_filename
+        import os
+        assert not os.path.exists(os.path.join(upload_dir, old_filename))
+        assert os.path.exists(os.path.join(upload_dir, new_filename))
+
+    def test_upload_image_invalid_type(self, client, admin_headers, item, tmp_path, monkeypatch):
+        self._setup_upload_dir(tmp_path, monkeypatch)
+        resp = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("test.txt", b"hello", "text/plain")},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 400
+        assert "Invalid image type" in resp.json()["detail"]
+
+    def test_upload_image_too_large(self, client, admin_headers, item, tmp_path, monkeypatch):
+        self._setup_upload_dir(tmp_path, monkeypatch)
+        monkeypatch.setattr("app.config.settings.max_image_size_mb", 0)  # 0 MB = reject everything
+        resp = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("big.jpg", self._make_jpeg_bytes(), "image/jpeg")},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 400
+        assert "too large" in resp.json()["detail"]
+
+    def test_upload_image_item_not_found(self, client, admin_headers, tmp_path, monkeypatch):
+        self._setup_upload_dir(tmp_path, monkeypatch)
+        resp = client.post(
+            "/api/v1/items/9999/image",
+            files={"file": ("test.jpg", self._make_jpeg_bytes(), "image/jpeg")},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 404
+
+    def test_upload_image_teacher_forbidden(self, client, teacher_headers, item, tmp_path, monkeypatch):
+        self._setup_upload_dir(tmp_path, monkeypatch)
+        resp = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("test.jpg", self._make_jpeg_bytes(), "image/jpeg")},
+            headers=teacher_headers,
+        )
+        assert resp.status_code == 403
+
+    def test_delete_image(self, client, admin_headers, item, tmp_path, monkeypatch):
+        upload_dir = self._setup_upload_dir(tmp_path, monkeypatch)
+        # Upload first
+        resp = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("test.jpg", self._make_jpeg_bytes(), "image/jpeg")},
+            headers=admin_headers,
+        )
+        filename = resp.json()["image_url"].split("/")[-1]
+        # Delete
+        resp2 = client.delete(f"/api/v1/items/{item.id}/image", headers=admin_headers)
+        assert resp2.status_code == 204
+        import os
+        assert not os.path.exists(os.path.join(upload_dir, filename))
+        # Verify item no longer has image_url
+        resp3 = client.get(f"/api/v1/items/{item.id}", headers=admin_headers)
+        assert resp3.json()["image_url"] is None
+
+    def test_delete_image_when_none(self, client, admin_headers, item, tmp_path, monkeypatch):
+        self._setup_upload_dir(tmp_path, monkeypatch)
+        resp = client.delete(f"/api/v1/items/{item.id}/image", headers=admin_headers)
+        assert resp.status_code == 204
+
+    def test_delete_item_removes_image_file(self, client, admin_headers, item, tmp_path, monkeypatch):
+        upload_dir = self._setup_upload_dir(tmp_path, monkeypatch)
+        # Upload image
+        resp = client.post(
+            f"/api/v1/items/{item.id}/image",
+            files={"file": ("test.jpg", self._make_jpeg_bytes(), "image/jpeg")},
+            headers=admin_headers,
+        )
+        filename = resp.json()["image_url"].split("/")[-1]
+        # Delete the item itself
+        resp2 = client.delete(f"/api/v1/items/{item.id}", headers=admin_headers)
+        assert resp2.status_code == 204
+        import os
+        assert not os.path.exists(os.path.join(upload_dir, filename))
+
+    def test_image_url_in_list_response(self, client, admin_headers, item):
+        resp = client.get("/api/v1/items", headers=admin_headers)
+        assert resp.status_code == 200
+        for it in resp.json()["items"]:
+            assert "image_url" in it

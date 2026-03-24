@@ -147,6 +147,40 @@ export async function getCategories(): Promise<any> {
   return apiGet('/categories?limit=100');
 }
 
+export async function uploadItemImage(
+  itemId: number,
+  imageBytes: Buffer,
+  filename: string = 'test.jpg',
+  contentType: string = 'image/jpeg',
+): Promise<any> {
+  const token = await getAdminToken();
+  const boundary = '----FormBoundary' + Date.now().toString(36);
+  const body = Buffer.concat([
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${contentType}\r\n\r\n`,
+    ),
+    imageBytes,
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  const res = await fetch(`${API_BASE}/items/${itemId}/image`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+    },
+    body,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`POST /items/${itemId}/image failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
+export async function deleteItemImage(itemId: number): Promise<void> {
+  return apiDelete(`/items/${itemId}/image`);
+}
+
 export async function createCategory(data: {
   name: string;
   description?: string;

@@ -39,6 +39,19 @@ export const catalogApi = {
     await api.delete(`/items/${id}`)
   },
 
+  async uploadItemImage(itemId: number, file: File): Promise<Item> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await api.post<Item>(`/items/${itemId}/image`, formData, {
+      headers: { 'Content-Type': undefined as unknown as string },
+    })
+    return data
+  },
+
+  async deleteItemImage(itemId: number): Promise<void> {
+    await api.delete(`/items/${itemId}/image`)
+  },
+
   // --- Categories ---
 
   async listCategories(): Promise<Category[]> {
