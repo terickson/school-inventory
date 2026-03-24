@@ -17,6 +17,90 @@ class TestCategoryEndpoints:
         }, headers=teacher_headers)
         assert resp.status_code == 403
 
+    def test_create_category_duplicate_name(self, client, admin_headers, category):
+        resp = client.post("/api/v1/categories", json={
+            "name": category.name,
+        }, headers=admin_headers)
+        assert resp.status_code == 409
+
+    def test_get_category(self, client, admin_headers, category):
+        resp = client.get(f"/api/v1/categories/{category.id}", headers=admin_headers)
+        assert resp.status_code == 200
+        assert resp.json()["id"] == category.id
+        assert resp.json()["name"] == category.name
+
+    def test_get_category_not_found(self, client, admin_headers):
+        resp = client.get("/api/v1/categories/9999", headers=admin_headers)
+        assert resp.status_code == 404
+
+    def test_update_category(self, client, admin_headers, category):
+        resp = client.patch(f"/api/v1/categories/{category.id}", json={
+            "name": "Updated Category",
+        }, headers=admin_headers)
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "Updated Category"
+
+    def test_update_category_not_found(self, client, admin_headers):
+        resp = client.patch("/api/v1/categories/9999", json={
+            "name": "Nope",
+        }, headers=admin_headers)
+        assert resp.status_code == 404
+
+    def test_update_category_duplicate_name(self, client, admin_headers, db):
+        from app.models.item import Category
+        cat1 = Category(name="Cat One")
+        cat2 = Category(name="Cat Two")
+        db.add_all([cat1, cat2])
+        db.commit()
+        db.refresh(cat2)
+        resp = client.patch(f"/api/v1/categories/{cat2.id}", json={
+            "name": "Cat One",
+        }, headers=admin_headers)
+        assert resp.status_code == 409
+
+    def test_update_category_teacher_forbidden(self, client, teacher_headers, category):
+        resp = client.patch(f"/api/v1/categories/{category.id}", json={
+            "name": "Nope",
+        }, headers=teacher_headers)
+        assert resp.status_code == 403
+
+    def test_delete_category(self, client, admin_headers, db):
+        from app.models.item import Category
+        cat = Category(name="Deletable")
+        db.add(cat)
+        db.commit()
+        db.refresh(cat)
+        resp = client.delete(f"/api/v1/categories/{cat.id}", headers=admin_headers)
+        assert resp.status_code == 204
+
+    def test_delete_category_with_items_blocked(self, client, admin_headers, category, item):
+        resp = client.delete(f"/api/v1/categories/{category.id}", headers=admin_headers)
+        assert resp.status_code == 400
+        assert "Cannot delete category" in resp.json()["detail"]
+
+    def test_delete_category_not_found(self, client, admin_headers):
+        resp = client.delete("/api/v1/categories/9999", headers=admin_headers)
+        assert resp.status_code == 404
+
+    def test_delete_category_teacher_forbidden(self, client, teacher_headers, category):
+        resp = client.delete(f"/api/v1/categories/{category.id}", headers=teacher_headers)
+        assert resp.status_code == 403
+
+    def test_list_categories_search(self, client, admin_headers, category):
+        resp = client.get(f"/api/v1/categories?search={category.name}", headers=admin_headers)
+        assert resp.status_code == 200
+        assert resp.json()["total"] >= 1
+
+    def test_sort_categories_by_name(self, client, admin_headers, db):
+        from app.models.item import Category
+        for name in ["Zebra Cat", "Alpha Cat", "Middle Cat"]:
+            db.add(Category(name=name))
+        db.commit()
+        resp = client.get("/api/v1/categories?sort_by=name&sort_order=asc", headers=admin_headers)
+        assert resp.status_code == 200
+        names = [c["name"] for c in resp.json()["items"]]
+        assert names == sorted(names)
+
 
 class TestItemEndpoints:
     def test_create_item(self, client, admin_headers, category):

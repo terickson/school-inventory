@@ -86,7 +86,8 @@ All endpoints under `/api/v1/`. Swagger docs at `/docs`. Key endpoint groups:
 - `/users/` — Admin user management
 - `/locators/` — Storage locations (closets)
 - `/locators/{id}/sublocators/` — Shelves within locations
-- `/items/` — Item catalog + `/items/categories`
+- `/categories/` — Category management (list, create, get, update, delete; admin-only for mutations)
+- `/items/` — Item catalog
 - `/inventory/` — Stock levels per location
 - `/checkouts/` — Checkout, return, extend, overdue, summary
 - `/admin/backup` — Download SQLite database backup (admin only)
@@ -108,6 +109,7 @@ All list endpoints accept these query parameters:
 |---|---|
 | `/users` | `username`, `full_name`, `email`, `created_at` |
 | `/locators` | `name`, `created_at` |
+| `/categories` | `name`, `created_at` |
 | `/items` | `name`, `created_at` |
 | `/inventory` | `quantity`, `min_quantity`, `created_at` |
 | `/checkouts` | `due_date`, `created_at`, `checkout_date` |
@@ -155,6 +157,6 @@ Frontend uses `VITE_API_BASE_URL` (default: `/api/v1`).
 
 ## Testing
 
-- Backend: 104 pytest tests covering all endpoints, auth, CRUD, sorting, edge cases
-- E2E: 34 Puppeteer tests covering login, user management, locators, catalog, inventory, checkout/return, dashboard, sorting
+- Backend: 117 pytest tests covering all endpoints, auth, CRUD, sorting, categories, edge cases
+- E2E: 41 Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting
 - Reset DB before E2E runs: `./scripts/reset_db.sh`

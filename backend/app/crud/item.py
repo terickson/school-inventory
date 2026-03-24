@@ -13,9 +13,18 @@ def get_category(db: Session, category_id: int) -> Category | None:
     return db.query(Category).filter(Category.id == category_id).first()
 
 
-def get_categories(db: Session, skip: int = 0, limit: int = 100):
+def get_category_by_name(db: Session, name: str) -> Category | None:
+    return db.query(Category).filter(Category.name == name).first()
+
+
+def get_categories(db: Session, skip: int = 0, limit: int = 100, search: str | None = None, sort_by: str | None = None, sort_order: str = "asc"):
     query = db.query(Category)
+    if search:
+        query = query.filter(Category.name.ilike(f"%{search}%"))
     total = query.count()
+    if sort_by and hasattr(Category, sort_by):
+        col = getattr(Category, sort_by)
+        query = query.order_by(col.desc() if sort_order == "desc" else col.asc())
     categories = query.offset(skip).limit(limit).all()
     return total, categories
 

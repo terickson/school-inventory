@@ -147,6 +147,24 @@ export async function getCategories(): Promise<any> {
   return apiGet('/categories?limit=100');
 }
 
+export async function createCategory(data: {
+  name: string;
+  description?: string;
+}): Promise<any> {
+  return apiPost('/categories', data);
+}
+
+export async function updateCategory(
+  id: number,
+  data: { name?: string; description?: string },
+): Promise<any> {
+  return apiPatch(`/categories/${id}`, data);
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  return apiDelete(`/categories/${id}`);
+}
+
 export async function waitForBackend(maxRetries = 30): Promise<void> {
   for (let i = 0; i < maxRetries; i++) {
     try {

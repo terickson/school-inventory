@@ -17,6 +17,16 @@ export interface Item {
   updated_at: string
 }
 
+export interface CategoryCreate {
+  name: string
+  description?: string
+}
+
+export interface CategoryUpdate {
+  name?: string
+  description?: string
+}
+
 export interface ItemCreate {
   name: string
   description?: string
