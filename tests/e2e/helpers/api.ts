@@ -212,6 +212,36 @@ export async function waitForBackend(maxRetries = 30): Promise<void> {
   throw new Error('Backend did not become ready');
 }
 
+export async function extendCheckout(
+  checkoutId: number,
+  data: { due_date: string },
+): Promise<any> {
+  return apiPost(`/checkouts/${checkoutId}/extend`, data);
+}
+
+export async function adjustInventory(
+  inventoryId: number,
+  data: { adjustment: number; reason: string },
+): Promise<any> {
+  return apiPost(`/inventory/${inventoryId}/adjust`, data);
+}
+
+export async function getToken(
+  username: string,
+  password: string,
+): Promise<{ access_token: string; refresh_token: string }> {
+  const formData = new URLSearchParams();
+  formData.append('username', username);
+  formData.append('password', password);
+  const res = await fetch(`${API_BASE}/auth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formData.toString(),
+  });
+  if (!res.ok) throw new Error(`Login failed: ${res.status}`);
+  return res.json() as Promise<{ access_token: string; refresh_token: string }>;
+}
+
 export async function waitForFrontend(maxRetries = 30): Promise<void> {
   for (let i = 0; i < maxRetries; i++) {
     try {

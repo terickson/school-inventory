@@ -1,7 +1,7 @@
 <template>
   <v-form ref="formRef" @submit.prevent>
     <v-text-field
-      v-model.number="form.quantity_change"
+      v-model.number="form.adjustment"
       label="Quantity Change (+ or -)"
       type="number"
       :rules="[rules.required, rules.nonZero]"
@@ -25,7 +25,7 @@ import type { VForm } from 'vuetify/components'
 const formRef = ref<VForm>()
 
 const form = reactive({
-  quantity_change: 0,
+  adjustment: 0,
   reason: '',
 })
 
@@ -41,13 +41,13 @@ async function validate(): Promise<boolean> {
 
 function getData() {
   return {
-    quantity_change: form.quantity_change,
+    adjustment: form.adjustment,
     reason: form.reason,
   }
 }
 
 function reset() {
-  form.quantity_change = 0
+  form.adjustment = 0
   form.reason = ''
   formRef.value?.resetValidation()
 }

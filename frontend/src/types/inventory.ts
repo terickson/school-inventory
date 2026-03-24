@@ -29,7 +29,7 @@ export interface InventoryUpdate {
 }
 
 export interface InventoryAdjust {
-  quantity_change: number
+  adjustment: number
   reason: string
 }
 

@@ -69,8 +69,9 @@ npm run build                                  # Production build
 npm run test:unit                              # Run unit tests
 
 # E2E
-./scripts/reset_db.sh                          # Reset database
-npx jest --config jest.config.ts --runInBand   # Run Puppeteer tests
+./scripts/run_e2e.sh                           # Reset DB, start servers, run all E2E tests, cleanup
+./scripts/run_e2e.sh --testPathPattern=05b     # Run a specific E2E test file
+./scripts/reset_db.sh                          # Reset database only
 
 # Docker
 docker compose up --build                      # Run everything

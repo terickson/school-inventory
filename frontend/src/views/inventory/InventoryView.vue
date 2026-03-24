@@ -87,13 +87,16 @@
       @save="handleCreate"
       @cancel="createDialogOpen = false"
     >
-      <v-select
+      <v-autocomplete
         v-model="createForm.item_id"
         :items="catalogItems"
+        :loading="catalogItemsLoading"
         item-title="name"
         item-value="id"
         label="Item"
+        placeholder="Type to search items..."
         :rules="[(v: number | null) => v !== null || 'Required']"
+        @update:search="debouncedItemSearch"
       />
       <v-select
         v-model="createForm.locator_id"
@@ -173,6 +176,7 @@ const adjustFormRef = ref<InstanceType<typeof InventoryAdjustForm>>()
 const locatorOptions = ref<{ id: number; name: string }[]>([])
 const sublocatorOptions = ref<{ id: number; name: string }[]>([])
 const catalogItems = ref<{ id: number; name: string }[]>([])
+const catalogItemsLoading = ref(false)
 
 const createForm = reactive({
   item_id: null as number | null,
@@ -193,11 +197,29 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
+let itemSearchTimeout: ReturnType<typeof setTimeout>
+
+async function searchCatalogItems(query?: string) {
+  catalogItemsLoading.value = true
+  try {
+    await catalogStore.fetchItems({ limit: 100, search: query || undefined })
+    catalogItems.value = catalogStore.items.map((i) => ({ id: i.id, name: i.name }))
+  } finally {
+    catalogItemsLoading.value = false
+  }
+}
+
+function debouncedItemSearch(query: string) {
+  clearTimeout(itemSearchTimeout)
+  itemSearchTimeout = setTimeout(() => {
+    searchCatalogItems(query)
+  }, 300)
+}
+
 onMounted(async () => {
   await locatorsStore.fetchLocators({ limit: 100 })
   locatorOptions.value = locatorsStore.locators.map((l) => ({ id: l.id, name: l.name }))
-  await catalogStore.fetchItems({ limit: 200 })
-  catalogItems.value = catalogStore.items.map((i) => ({ id: i.id, name: i.name }))
+  await searchCatalogItems()
 })
 
 watch(() => createForm.locator_id, async (id) => {

@@ -59,7 +59,7 @@ const props = defineProps<{
 }>()
 
 const formRef = ref<VForm>()
-const imageFiles = ref<File[]>([])
+const imageFiles = ref<File | File[] | null>(null)
 const removeImageFlag = ref(false)
 
 const form = reactive({
@@ -97,7 +97,7 @@ watch(() => props.item, (i) => {
     form.category_id = null
     form.unit_of_measure = 'unit'
   }
-  imageFiles.value = []
+  imageFiles.value = null
   removeImageFlag.value = false
 }, { immediate: true })
 
@@ -116,7 +116,10 @@ function getData() {
 }
 
 function getImageFile(): File | null {
-  return imageFiles.value?.[0] ?? null
+  const val = imageFiles.value
+  if (val instanceof File) return val
+  if (Array.isArray(val)) return val[0] ?? null
+  return null
 }
 
 function shouldRemoveImage(): boolean {
@@ -128,7 +131,7 @@ function reset() {
   form.description = ''
   form.category_id = null
   form.unit_of_measure = 'unit'
-  imageFiles.value = []
+  imageFiles.value = null
   removeImageFlag.value = false
   formRef.value?.resetValidation()
 }

@@ -54,6 +54,14 @@ describe('Locators Management', () => {
     );
     await new Promise((r) => setTimeout(r, 1000));
 
+    // Search for the new locator (may be on page 2 due to other test data)
+    const searchInput = await page.waitForSelector(
+      '[data-testid="locators-table"] .v-toolbar .v-text-field input',
+    );
+    await searchInput!.click({ clickCount: 3 });
+    await searchInput!.type(locatorName);
+    await new Promise((r) => setTimeout(r, 1500));
+
     // Verify it appears
     const tableText = await page.$eval('[data-testid="locators-table"]', (el) => el.textContent);
     expect(tableText).toContain(locatorName);
