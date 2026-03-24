@@ -120,7 +120,7 @@ A one-time setup script prepares a Raspberry Pi (Raspberry Pi OS / Debian-based)
 
 ```bash
 # Download and run the setup script
-curl -fsSL https://raw.githubusercontent.com/terickson/school-inventory/main/scripts/rpi-setup.sh -o rpi-setup.sh
+curl -fsSL https://github.com/terickson/school-inventory/raw/refs/heads/main/scripts/rpi-setup.sh -o rpi-setup.sh
 chmod +x rpi-setup.sh
 sudo ./rpi-setup.sh
 ```
@@ -179,7 +179,7 @@ A deploy script handles both initial installation and updates. It downloads the 
 
 ```bash
 # Download the deploy script
-curl -fsSL https://raw.githubusercontent.com/terickson/school-inventory/main/scripts/deploy.sh -o deploy.sh
+curl -fsSL https://github.com/terickson/school-inventory/raw/refs/heads/main/scripts/deploy.sh -o deploy.sh
 chmod +x deploy.sh
 
 # Run it (requires sudo for /opt/apps)
