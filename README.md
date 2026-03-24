@@ -101,7 +101,7 @@ The app is now available at **http://localhost:5173**.
 docker compose up -d
 
 # Access the app
-# Frontend: http://localhost
+# Frontend: http://localhost:8080
 # Backend API: http://localhost:8000
 ```
 
@@ -113,6 +113,24 @@ ADMIN_USERNAME=admin
 ADMIN_EMAIL=admin@school.edu
 ADMIN_PASSWORD=YourSecurePassword!
 ```
+
+## Raspberry Pi Setup
+
+A one-time setup script prepares a Raspberry Pi (Raspberry Pi OS / Debian-based) with all prerequisites and an Nginx reverse proxy.
+
+```bash
+# Download and run the setup script
+curl -fsSL https://raw.githubusercontent.com/terickson/school-inventory/main/scripts/rpi-setup.sh -o rpi-setup.sh
+chmod +x rpi-setup.sh
+sudo ./rpi-setup.sh
+```
+
+This installs:
+- **curl**, **unzip**, **rsync** — required by the deploy script
+- **Docker** and **Docker Compose** plugin
+- **Nginx** — configured as a reverse proxy on port 80, forwarding to the frontend (8080) and backend (8000)
+
+It also creates the `/opt/apps/school-inventory` and `/opt/apps/school-inventory-backups` directories. After setup, run the deploy script to install the application.
 
 ## Deploy via GitHub Zip
 
@@ -339,7 +357,9 @@ school-inventory/
 │   ├── Dockerfile
 │   └── package.json
 ├── scripts/
-│   └── reset_db.sh           # Database reset script
+│   ├── reset_db.sh           # Database reset script
+│   ├── deploy.sh             # GitHub zip-based install/update
+│   └── rpi-setup.sh          # Raspberry Pi initial setup
 ├── tests/
 │   └── e2e/                  # Puppeteer E2E tests
 ├── docker-compose.yml

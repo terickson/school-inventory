@@ -13,7 +13,7 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@school.edu}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-AdminPass123!}
-      - CORS_ORIGINS=["http://localhost","http://localhost:80"]
+      - CORS_ORIGINS=["http://localhost","http://localhost:80","http://localhost:8080"]
       - ENVIRONMENT=production
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
@@ -26,7 +26,7 @@ services:
     build:
       context: ./frontend
     ports:
-      - "80:80"
+      - "8080:8080"
     depends_on:
       backend:
         condition: service_healthy

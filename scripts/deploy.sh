@@ -249,7 +249,7 @@ print_summary() {
     fi
     echo "════════════════════════════════════════════════"
     echo ""
-    echo "  Frontend:  http://localhost"
+    echo "  Frontend:  http://localhost:8080"
     echo "  API:       http://localhost:8000"
     echo "  API Docs:  http://localhost:8000/docs"
     echo "  Config:    ${ENV_FILE}"
