@@ -15,7 +15,6 @@ const chipColor = computed(() => {
   switch (props.status) {
     case 'active': return 'info'
     case 'returned': return 'success'
-    case 'overdue': return 'error'
     default: return 'grey'
   }
 })
@@ -24,7 +23,6 @@ const chipIcon = computed(() => {
   switch (props.status) {
     case 'active': return 'mdi-clock-outline'
     case 'returned': return 'mdi-keyboard-return'
-    case 'overdue': return 'mdi-alert-circle-outline'
     default: return 'mdi-help-circle-outline'
   }
 })

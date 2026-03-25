@@ -26,7 +26,7 @@
       :permanent="!isMobile"
       data-testid="nav-drawer"
     >
-      <v-list density="compact" nav>
+      <v-list :density="isMobile ? 'default' : 'compact'" nav>
         <v-list-item
           prepend-icon="mdi-view-dashboard"
           title="Dashboard"
@@ -63,11 +63,7 @@
           title="Checkouts"
           :to="{ name: 'checkouts' }"
           data-testid="nav-checkouts"
-        >
-          <template #append v-if="overdueCount > 0">
-            <v-badge :content="overdueCount" color="error" inline />
-          </template>
-        </v-list-item>
+        />
         <v-list-item
           v-if="authStore.isAdmin"
           prepend-icon="mdi-account-group"
@@ -98,20 +94,24 @@
     </v-main>
 
     <!-- Bottom Navigation (mobile) -->
-    <v-bottom-navigation v-if="isMobile" grow color="primary">
-      <v-btn :to="{ name: 'dashboard' }">
+    <v-bottom-navigation v-if="isMobile" grow color="primary" data-testid="bottom-nav">
+      <v-btn :to="{ name: 'dashboard' }" data-testid="bottom-nav-home">
         <v-icon>mdi-view-dashboard</v-icon>
         <span>Home</span>
       </v-btn>
-      <v-btn :to="{ name: 'inventory' }">
+      <v-btn :to="{ name: 'locators' }" data-testid="bottom-nav-locations">
+        <v-icon>mdi-map-marker</v-icon>
+        <span>Locations</span>
+      </v-btn>
+      <v-btn :to="{ name: 'inventory' }" data-testid="bottom-nav-inventory">
         <v-icon>mdi-package-variant-closed</v-icon>
         <span>Inventory</span>
       </v-btn>
-      <v-btn :to="{ name: 'checkouts' }">
+      <v-btn :to="{ name: 'checkouts' }" data-testid="bottom-nav-checkout">
         <v-icon>mdi-clipboard-check</v-icon>
         <span>Checkout</span>
       </v-btn>
-      <v-btn :to="{ name: 'catalog' }">
+      <v-btn :to="{ name: 'catalog' }" data-testid="bottom-nav-catalog">
         <v-icon>mdi-book-open-variant</v-icon>
         <span>Catalog</span>
       </v-btn>
@@ -138,30 +138,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useCheckoutStore } from '@/stores/checkout'
 import { useBreakpoint, useNotify } from '@/composables'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const authStore = useAuthStore()
-const checkoutStore = useCheckoutStore()
 const router = useRouter()
 const { isMobile } = useBreakpoint()
 const notify = useNotify()
 
 const drawer = ref(!isMobile.value)
-const overdueCount = ref(0)
-
-onMounted(async () => {
-  try {
-    await checkoutStore.fetchSummary()
-    overdueCount.value = checkoutStore.summary?.overdue_count ?? 0
-  } catch {
-    // ignore
-  }
-})
 
 function goToProfile() {
   router.push({ name: 'profile' })

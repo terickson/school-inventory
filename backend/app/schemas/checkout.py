@@ -73,7 +73,6 @@ class InventoryAdjust(BaseModel):
 class CheckoutBase(BaseModel):
     inventory_id: int
     quantity: int
-    due_date: datetime | None = None
     notes: str | None = None
 
 
@@ -95,8 +94,8 @@ class CheckoutResponse(BaseModel):
     inventory_id: int
     user_id: int
     quantity: int
+    returned_quantity: int
     checkout_date: datetime
-    due_date: datetime
     return_date: datetime | None
     status: str
     notes: str | None
@@ -113,14 +112,9 @@ class CheckoutReturn(BaseModel):
     notes: str | None = None
 
 
-class CheckoutExtend(BaseModel):
-    due_date: datetime
-
-
 class CheckoutSummary(BaseModel):
     total_items: int
     active_checkouts: int
-    overdue_count: int
     low_stock_count: int
 
 

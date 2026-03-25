@@ -6,7 +6,7 @@ def pagination_params(
     limit: int = Query(20, ge=1, le=100, description="Maximum number of records to return"),
     sort_by: str | None = Query(
         None,
-        description="Column name to sort by (e.g. 'name', 'created_at', 'username', 'quantity', 'due_date'). "
+        description="Column name to sort by (e.g. 'name', 'created_at', 'username', 'quantity'). "
         "Invalid column names are silently ignored.",
     ),
     sort_order: str = Query(

@@ -19,6 +19,12 @@ export async function createPage(browser: Browser): Promise<Page> {
   return page;
 }
 
+export async function createMobilePage(browser: Browser): Promise<Page> {
+  const page = await browser.newPage();
+  await page.setViewport({ width: 375, height: 667 });
+  return page;
+}
+
 /**
  * Navigate to a URL and wait for the Vue SPA to render.
  * Uses a polling approach to handle HMR and SPA routing.

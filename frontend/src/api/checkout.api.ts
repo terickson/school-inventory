@@ -5,7 +5,6 @@ import type {
   Checkout,
   CheckoutCreate,
   CheckoutReturn,
-  CheckoutExtend,
   CheckoutFilters,
   DashboardSummary,
 } from '@/types'
@@ -30,16 +29,6 @@ export const checkoutApi = {
 
   async returnCheckout(id: number, payload: CheckoutReturn): Promise<Checkout> {
     const { data } = await api.post<Checkout>(`/checkouts/${id}/return`, payload)
-    return data
-  },
-
-  async extend(id: number, payload: CheckoutExtend): Promise<Checkout> {
-    const { data } = await api.post<Checkout>(`/checkouts/${id}/extend`, payload)
-    return data
-  },
-
-  async overdue(params?: PaginationParams): Promise<PaginatedResponse<Checkout>> {
-    const { data } = await api.get<PaginatedResponse<Checkout>>('/checkouts/overdue', { params })
     return data
   },
 

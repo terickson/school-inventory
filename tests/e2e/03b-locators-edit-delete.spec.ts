@@ -59,7 +59,7 @@ describe('Locator Edit and Delete', () => {
   test('Edit a locator via UI', async () => {
     // Search to find the locator (pagination may hide it)
     const searchInput = await page.waitForSelector(
-      '[data-testid="locators-table"] .v-toolbar .v-text-field input',
+      '[data-testid="locators-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(editLocatorName);
@@ -113,7 +113,7 @@ describe('Locator Edit and Delete', () => {
   test('Delete a locator via UI', async () => {
     // Search for the delete target
     const searchInput = await page.waitForSelector(
-      '[data-testid="locators-table"] .v-toolbar .v-text-field input',
+      '[data-testid="locators-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(deleteLocatorName);

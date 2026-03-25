@@ -15,12 +15,6 @@
       min="1"
       :rules="[rules.required, rules.positiveNumber]"
     />
-    <v-text-field
-      v-model="form.due_date"
-      label="Due Date"
-      type="date"
-      :rules="[rules.required]"
-    />
     <v-select
       v-if="isAdmin"
       v-model="form.user_id"
@@ -58,7 +52,6 @@ const isAdmin = computed(() => authStore.isAdmin)
 const form = reactive({
   inventory_id: null as number | null,
   quantity: 1,
-  due_date: getDefaultDueDate(),
   notes: '',
   user_id: null as number | null,
 })
@@ -75,12 +68,6 @@ const users = computed(() => usersStore.users as User[])
 const rules = {
   required: (v: unknown) => !!v || v === 0 || 'Required',
   positiveNumber: (v: number) => v > 0 || 'Must be greater than 0',
-}
-
-function getDefaultDueDate(): string {
-  const d = new Date()
-  d.setDate(d.getDate() + 7)
-  return d.toISOString().split('T')[0]!
 }
 
 onMounted(async () => {
@@ -101,7 +88,6 @@ function getData() {
   return {
     inventory_id: form.inventory_id!,
     quantity: form.quantity,
-    due_date: form.due_date,
     notes: form.notes || undefined,
     user_id: form.user_id || undefined,
   }
@@ -110,7 +96,6 @@ function getData() {
 function reset() {
   form.inventory_id = null
   form.quantity = 1
-  form.due_date = getDefaultDueDate()
   form.notes = ''
   form.user_id = null
   formRef.value?.resetValidation()

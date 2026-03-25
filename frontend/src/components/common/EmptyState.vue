@@ -1,6 +1,6 @@
 <template>
-  <v-container class="text-center pa-8">
-    <v-icon :icon="icon" size="64" color="grey-lighten-1" class="mb-4" />
+  <v-container :class="isMobile ? 'text-center pa-4' : 'text-center pa-8'">
+    <v-icon :icon="icon" :size="isMobile ? 48 : 64" color="grey-lighten-1" class="mb-4" />
     <div class="text-h6 text-grey-darken-1 mb-2">{{ title }}</div>
     <div v-if="subtitle" class="text-body-2 text-grey mb-4">{{ subtitle }}</div>
     <v-btn
@@ -15,6 +15,8 @@
 </template>
 
 <script setup lang="ts">
+import { useBreakpoint } from '@/composables'
+
 withDefaults(defineProps<{
   icon?: string
   title: string
@@ -29,4 +31,6 @@ withDefaults(defineProps<{
 defineEmits<{
   action: []
 }>()
+
+const { isMobile } = useBreakpoint()
 </script>

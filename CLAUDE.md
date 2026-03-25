@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A web-based inventory management system for schools. Teachers track supplies in physical storage locations (locators/sublocators), manage an item catalog, and check out items for specific time periods. Two roles: Admin (manages users, full access) and Teacher (manages own locations and checkouts).
+A web-based inventory management system for schools. Teachers track supplies in physical storage locations (locators/sublocators), manage an item catalog, and check out items. Two roles: Admin (manages users, full access) and Teacher (manages own locations and checkouts).
 
 ## Architecture
 
@@ -91,7 +91,7 @@ All endpoints under `/api/v1/`. Swagger docs at `/docs`. Key endpoint groups:
 - `/items/` — Item catalog, plus `POST /items/{id}/image` and `DELETE /items/{id}/image` for image management
 - `/uploads/` — Static file serving for uploaded item images
 - `/inventory/` — Stock levels per location
-- `/checkouts/` — Checkout, return, extend, overdue, summary
+- `/checkouts/` — Checkout, return, summary
 - `/admin/backup` — Download SQLite database backup (admin only)
 
 ### Pagination & Sorting
@@ -114,8 +114,7 @@ All list endpoints accept these query parameters:
 | `/categories` | `name`, `created_at` |
 | `/items` | `name`, `created_at` |
 | `/inventory` | `quantity`, `min_quantity`, `created_at` |
-| `/checkouts` | `due_date`, `created_at`, `checkout_date` |
-| `/checkouts/overdue` | `due_date`, `created_at` |
+| `/checkouts` | `created_at`, `checkout_date` |
 
 Invalid `sort_by` values are silently ignored (no error, unsorted results). Invalid `sort_order` values return 422.
 
@@ -126,11 +125,12 @@ Example: `GET /api/v1/users?sort_by=username&sort_order=desc&limit=10`
 - Backend uses **sync** route handlers (`def`, not `async def`) — SQLite doesn't benefit from async
 - All API responses are paginated: `{ total, skip, limit, items: [...] }` with optional server-side sorting via `sort_by` and `sort_order` query params
 - JWT auth: access tokens (30min) + refresh tokens (7 days), both with `type` claim
-- Checkout and return operations are **atomic** (inventory quantity updated in same transaction)
+- Checkout and return operations are **atomic** (inventory quantity updated in same transaction). Partial returns are supported — returning fewer items than checked out keeps the checkout active until all items are returned.
 - Users are **soft-deleted** (is_active=false), never hard-deleted
 - Frontend uses `<script setup lang="ts">` everywhere (Vue 3 Composition API)
 - All interactive elements have `data-testid` attributes for E2E testing
 - UI uses "Storage Location"/"Location" and "Shelf" in user-facing text, not "Locator"/"Sublocator"
+- Mobile responsive: views use `useBreakpoint()` composable and computed headers to hide non-essential table columns, stack toolbar filters, and swap icon buttons for action menus on small screens
 
 ## Domain Terminology
 
@@ -153,7 +153,6 @@ Backend reads from `backend/.env`. Key vars:
 - `SECRET_KEY` — JWT signing key
 - `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` — Initial admin account
 - `CORS_ORIGINS` — Allowed frontend origins
-- `DEFAULT_CHECKOUT_DAYS` — Default loan period
 - `UPLOAD_DIR` — Directory for uploaded item images (default: `uploads`)
 - `MAX_IMAGE_SIZE_MB` — Maximum image upload size in MB (default: 5)
 
@@ -161,6 +160,6 @@ Frontend uses `VITE_API_BASE_URL` (default: `/api/v1`).
 
 ## Testing
 
-- Backend: 127 pytest tests covering all endpoints, auth, CRUD, sorting, categories, image upload, edge cases
-- E2E: 46 Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting, item images
+- Backend: pytest tests covering all endpoints, auth, CRUD, sorting, categories, image upload, edge cases
+- E2E: Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting, item images
 - Reset DB before E2E runs: `./scripts/reset_db.sh`

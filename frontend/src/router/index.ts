@@ -60,12 +60,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/checkouts/overdue',
-      name: 'overdue',
-      component: () => import('@/views/checkout/OverdueView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),

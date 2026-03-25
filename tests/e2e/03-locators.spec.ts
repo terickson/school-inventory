@@ -56,7 +56,7 @@ describe('Locators Management', () => {
 
     // Search for the new locator (may be on page 2 due to other test data)
     const searchInput = await page.waitForSelector(
-      '[data-testid="locators-table"] .v-toolbar .v-text-field input',
+      '[data-testid="locators-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(locatorName);

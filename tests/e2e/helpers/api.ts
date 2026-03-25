@@ -129,7 +129,6 @@ export async function createInventory(data: {
 export async function createCheckout(data: {
   inventory_id: number;
   quantity: number;
-  due_date: string;
   notes?: string;
   user_id?: number;
 }): Promise<any> {
@@ -210,13 +209,6 @@ export async function waitForBackend(maxRetries = 30): Promise<void> {
     await new Promise((r) => setTimeout(r, 1000));
   }
   throw new Error('Backend did not become ready');
-}
-
-export async function extendCheckout(
-  checkoutId: number,
-  data: { due_date: string },
-): Promise<any> {
-  return apiPost(`/checkouts/${checkoutId}/extend`, data);
 }
 
 export async function adjustInventory(

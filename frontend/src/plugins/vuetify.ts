@@ -52,6 +52,7 @@ export default createVuetify({
     VDataTableServer: {
       hover: true,
       density: 'comfortable',
+      mobileBreakpoint: 'sm',
     },
   },
 })

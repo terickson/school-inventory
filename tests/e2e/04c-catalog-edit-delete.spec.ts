@@ -54,7 +54,7 @@ describe('Catalog Edit and Delete', () => {
 
     // Search for the item
     const searchInput = await page.waitForSelector(
-      '[data-testid="items-table"] .v-toolbar .v-text-field input',
+      '[data-testid="items-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(editItemName);
@@ -104,7 +104,7 @@ describe('Catalog Edit and Delete', () => {
 
     // Search for updated name
     const searchInput = await page.waitForSelector(
-      '[data-testid="items-table"] .v-toolbar .v-text-field input',
+      '[data-testid="items-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(`${editItemName} Updated`);
@@ -117,7 +117,7 @@ describe('Catalog Edit and Delete', () => {
   test('Delete item via UI', async () => {
     // Search for the delete item
     const searchInput = await page.waitForSelector(
-      '[data-testid="items-table"] .v-toolbar .v-text-field input',
+      '[data-testid="items-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(deleteItemName);

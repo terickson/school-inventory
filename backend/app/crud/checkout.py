@@ -1,13 +1,12 @@
 import json
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.checkout import Inventory, Checkout, AuditLog
 from app.schemas.checkout import (
     InventoryCreate, InventoryUpdate, InventoryAdjust,
-    CheckoutCreate, CheckoutReturn, CheckoutExtend,
+    CheckoutCreate, CheckoutReturn,
 )
-from app.config import settings
 
 
 # --- Inventory ---
@@ -150,15 +149,10 @@ def create_checkout(db: Session, checkout_in: CheckoutCreate, user_id: int) -> C
 
     checkout_user_id = checkout_in.user_id if checkout_in.user_id else user_id
 
-    due_date = checkout_in.due_date
-    if due_date is None:
-        due_date = datetime.now(timezone.utc) + timedelta(days=settings.default_checkout_days)
-
     checkout = Checkout(
         inventory_id=checkout_in.inventory_id,
         user_id=checkout_user_id,
         quantity=checkout_in.quantity,
-        due_date=due_date,
         notes=checkout_in.notes,
         status="active",
     )
@@ -170,63 +164,29 @@ def create_checkout(db: Session, checkout_in: CheckoutCreate, user_id: int) -> C
 
 
 def return_checkout(db: Session, checkout: Checkout, return_in: CheckoutReturn) -> Checkout:
-    """Atomic return: update checkout status and increment inventory."""
+    """Atomic return: update checkout status and increment inventory. Supports partial returns."""
     if checkout.status == "returned":
         raise ValueError("Checkout already returned")
 
-    return_qty = return_in.quantity if return_in.quantity is not None else checkout.quantity
+    remaining = checkout.quantity - checkout.returned_quantity
+    return_qty = return_in.quantity if return_in.quantity is not None else remaining
 
-    if return_qty > checkout.quantity:
+    if return_qty > remaining:
         raise ValueError(
-            f"Cannot return more than checked out: returning {return_qty}, checked out {checkout.quantity}"
+            f"Cannot return more than remaining: returning {return_qty}, remaining {remaining}"
         )
 
     inv = db.query(Inventory).filter(Inventory.id == checkout.inventory_id).with_for_update().first()
     inv.quantity += return_qty
-    checkout.status = "returned"
-    checkout.return_date = datetime.now(timezone.utc)
+    checkout.returned_quantity += return_qty
+    if checkout.returned_quantity == checkout.quantity:
+        checkout.status = "returned"
+        checkout.return_date = datetime.now(timezone.utc)
     if return_in.notes:
         checkout.notes = (checkout.notes or "") + f" | Return: {return_in.notes}"
     db.commit()
     db.refresh(checkout)
     return checkout
-
-
-def extend_checkout(db: Session, checkout: Checkout, extend_in: CheckoutExtend) -> Checkout:
-    if checkout.status == "returned":
-        raise ValueError("Cannot extend a returned checkout")
-    checkout.due_date = extend_in.due_date
-    if checkout.status == "overdue" and extend_in.due_date > datetime.now(timezone.utc):
-        checkout.status = "active"
-    db.commit()
-    db.refresh(checkout)
-    return checkout
-
-
-def get_overdue_checkouts(db: Session, skip: int = 0, limit: int = 20, user_id: int | None = None, sort_by: str | None = None, sort_order: str = "asc"):
-    now = datetime.now(timezone.utc)
-    query = db.query(Checkout).options(
-        joinedload(Checkout.inventory).joinedload(Inventory.item),
-        joinedload(Checkout.inventory).joinedload(Inventory.locator),
-        joinedload(Checkout.user),
-    ).filter(
-        Checkout.status.in_(["active", "overdue"]),
-        Checkout.due_date < now,
-    )
-    if user_id is not None:
-        query = query.filter(Checkout.user_id == user_id)
-    # Mark overdue
-    db.query(Checkout).filter(
-        Checkout.status == "active",
-        Checkout.due_date < now,
-    ).update({"status": "overdue"}, synchronize_session="fetch")
-    db.commit()
-    total = query.count()
-    if sort_by and hasattr(Checkout, sort_by):
-        col = getattr(Checkout, sort_by)
-        query = query.order_by(col.desc() if sort_order == "desc" else col.asc())
-    checkouts = query.offset(skip).limit(limit).all()
-    return total, checkouts
 
 
 def get_checkout_summary(db: Session, user_id: int | None = None):
@@ -238,15 +198,6 @@ def get_checkout_summary(db: Session, user_id: int | None = None):
         checkout_query = checkout_query.filter(Checkout.user_id == user_id)
     active_checkouts = checkout_query.count()
 
-    now = datetime.now(timezone.utc)
-    overdue_query = db.query(Checkout).filter(
-        Checkout.status.in_(["active", "overdue"]),
-        Checkout.due_date < now,
-    )
-    if user_id is not None:
-        overdue_query = overdue_query.filter(Checkout.user_id == user_id)
-    overdue_items = overdue_query.count()
-
     low_stock_items = db.query(Inventory).filter(
         Inventory.quantity <= Inventory.min_quantity,
         Inventory.min_quantity > 0,
@@ -255,6 +206,5 @@ def get_checkout_summary(db: Session, user_id: int | None = None):
     return {
         "total_items": total_items,
         "active_checkouts": active_checkouts,
-        "overdue_count": overdue_items,
         "low_stock_count": low_stock_items,
     }

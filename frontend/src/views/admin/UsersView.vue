@@ -23,18 +23,18 @@
         @update:options="loadItems"
       >
         <template #top>
-          <v-toolbar flat>
+          <div class="pa-4">
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
               label="Search users..."
               hide-details
               density="compact"
-              class="mx-4"
-              style="max-width: 300px"
+              data-testid="search-input"
+              :style="isMobile ? '' : 'max-width: 300px'"
               @update:model-value="debouncedSearch"
             />
-          </v-toolbar>
+          </div>
         </template>
 
         <template #item.role="{ item }">
@@ -50,12 +50,25 @@
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn icon size="small" variant="text" @click="openEdit(item)">
-            <v-icon>mdi-pencil</v-icon>
-          </v-btn>
-          <v-btn icon size="small" variant="text" color="error" @click="handleDeactivate(item)">
-            <v-icon>mdi-account-off</v-icon>
-          </v-btn>
+          <template v-if="!isMobile">
+            <v-btn icon size="small" variant="text" @click="openEdit(item)">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn icon size="small" variant="text" color="error" @click="handleDeactivate(item)">
+              <v-icon>mdi-account-off</v-icon>
+            </v-btn>
+          </template>
+          <v-menu v-else>
+            <template #activator="{ props }">
+              <v-btn icon size="small" variant="text" v-bind="props">
+                <v-icon>mdi-dots-vertical</v-icon>
+              </v-btn>
+            </template>
+            <v-list density="compact">
+              <v-list-item prepend-icon="mdi-pencil" title="Edit" @click="openEdit(item)" />
+              <v-list-item prepend-icon="mdi-account-off" title="Deactivate" class="text-error" @click="handleDeactivate(item)" />
+            </v-list>
+          </v-menu>
         </template>
       </v-data-table-server>
     </v-card>
@@ -74,9 +87,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useUsersStore } from '@/stores/users'
-import { useConfirm, useNotify } from '@/composables'
+import { useConfirm, useNotify, useBreakpoint } from '@/composables'
 import type { User } from '@/types'
 import PageHeader from '@/components/common/PageHeader.vue'
 import FormDialog from '@/components/common/FormDialog.vue'
@@ -85,6 +98,7 @@ import UserForm from '@/components/users/UserForm.vue'
 const usersStore = useUsersStore()
 const { confirm } = useConfirm()
 const notify = useNotify()
+const { isMobile } = useBreakpoint()
 
 const page = ref(1)
 const itemsPerPage = ref(20)
@@ -97,14 +111,14 @@ const userFormRef = ref<InstanceType<typeof UserForm>>()
 
 let searchTimeout: ReturnType<typeof setTimeout>
 
-const headers = [
+const headers = computed(() => [
   { title: 'Username', key: 'username', sortable: true },
   { title: 'Full Name', key: 'full_name', sortable: true },
-  { title: 'Email', key: 'email', sortable: true },
+  ...(!isMobile.value ? [{ title: 'Email', key: 'email', sortable: true }] : []),
   { title: 'Role', key: 'role', sortable: false },
   { title: 'Status', key: 'is_active', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
-]
+])
 
 function loadItems(options?: { sortBy?: { key: string; order: 'asc' | 'desc' }[] }) {
   if (options?.sortBy) sortBy.value = options.sortBy

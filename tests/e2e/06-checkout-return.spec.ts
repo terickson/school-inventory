@@ -51,12 +51,9 @@ beforeAll(async () => {
   testInventoryId = inv.id;
 
   // Create checkout via API
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 7);
   const checkout = await apiCreateCheckout({
     inventory_id: inv.id,
     quantity: 3,
-    due_date: dueDate.toISOString().split('T')[0],
     notes: 'E2E test checkout',
   });
   testCheckoutId = checkout.id;
@@ -125,8 +122,8 @@ describe('Checkout and Return Flow', () => {
   test('Verify checkout status changed to returned', async () => {
     // Switch to All tab to see returned checkouts
     const tabs = await page.$$('.v-tab');
-    if (tabs.length >= 3) {
-      await tabs[2].click(); // All tab
+    if (tabs.length >= 2) {
+      await tabs[1].click(); // All tab
       await new Promise((r) => setTimeout(r, 1500));
     }
 
@@ -137,5 +134,55 @@ describe('Checkout and Return Flow', () => {
   test('Verify inventory quantity restored', async () => {
     const inv = await apiGet(`/inventory/${testInventoryId}`);
     expect(inv.quantity).toBe(20); // restored
+  });
+});
+
+describe('Partial Return Flow', () => {
+  let partialCheckoutId: number;
+  let partialInvId: number;
+
+  test('Create checkout for partial return test', async () => {
+    const suffix = Date.now().toString(36);
+    const cats = await getCategories();
+    const categoryId = cats.items[0].id;
+    const locator = await createLocator({ name: `Partial Closet ${suffix}` });
+    const item = await createItem({
+      name: `Partial Item ${suffix}`,
+      category_id: categoryId,
+      unit_of_measure: 'unit',
+    });
+    const inv = await createInventory({
+      item_id: item.id,
+      locator_id: locator.id,
+      quantity: 10,
+      min_quantity: 2,
+    });
+    partialInvId = inv.id;
+    const checkout = await apiCreateCheckout({
+      inventory_id: inv.id,
+      quantity: 5,
+    });
+    partialCheckoutId = checkout.id;
+    expect(checkout.returned_quantity).toBe(0);
+  });
+
+  test('Partial return keeps checkout active', async () => {
+    const returned = await apiReturnCheckout(partialCheckoutId, { quantity: 2 });
+    expect(returned.status).toBe('active');
+    expect(returned.returned_quantity).toBe(2);
+    expect(returned.return_date).toBeNull();
+    // Inventory partially restored: 10 - 5 + 2 = 7
+    const inv = await apiGet(`/inventory/${partialInvId}`);
+    expect(inv.quantity).toBe(7);
+  });
+
+  test('Return remaining completes checkout', async () => {
+    const returned = await apiReturnCheckout(partialCheckoutId, { quantity: 3 });
+    expect(returned.status).toBe('returned');
+    expect(returned.returned_quantity).toBe(5);
+    expect(returned.return_date).not.toBeNull();
+    // Inventory fully restored: 7 + 3 = 10
+    const inv = await apiGet(`/inventory/${partialInvId}`);
+    expect(inv.quantity).toBe(10);
   });
 });

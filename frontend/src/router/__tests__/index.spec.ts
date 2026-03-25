@@ -11,7 +11,6 @@ vi.mock('@/views/catalog/CatalogView.vue', () => ({ default: { template: '<div>C
 vi.mock('@/views/catalog/CategoriesView.vue', () => ({ default: { template: '<div>Categories</div>' } }))
 vi.mock('@/views/inventory/InventoryView.vue', () => ({ default: { template: '<div>Inventory</div>' } }))
 vi.mock('@/views/checkout/CheckoutView.vue', () => ({ default: { template: '<div>Checkout</div>' } }))
-vi.mock('@/views/checkout/OverdueView.vue', () => ({ default: { template: '<div>Overdue</div>' } }))
 vi.mock('@/views/profile/ProfileView.vue', () => ({ default: { template: '<div>Profile</div>' } }))
 
 vi.mock('@/api', () => ({

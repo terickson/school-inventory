@@ -23,15 +23,15 @@
         @update:options="loadItems"
       >
         <template #top>
-          <v-toolbar flat>
+          <div :class="isMobile ? 'd-flex flex-column ga-2 pa-4' : 'd-flex align-center ga-2 pa-4'">
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
               label="Search items..."
               hide-details
               density="compact"
-              class="mx-4"
-              style="max-width: 300px"
+              data-testid="search-input"
+              :style="isMobile ? '' : 'max-width: 300px'"
               @update:model-value="debouncedSearch"
             />
             <v-select
@@ -43,11 +43,10 @@
               hide-details
               density="compact"
               clearable
-              class="mx-4"
-              style="max-width: 200px"
+              :style="isMobile ? '' : 'max-width: 200px'"
               @update:model-value="() => loadItems()"
             />
-          </v-toolbar>
+          </div>
         </template>
 
         <template #item.image="{ item }">
@@ -72,12 +71,25 @@
 
         <template #item.actions="{ item }">
           <template v-if="authStore.isAdmin">
-            <v-btn icon size="small" variant="text" @click="openEdit(item)">
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn icon size="small" variant="text" color="error" @click="handleDelete(item)">
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
+            <template v-if="!isMobile">
+              <v-btn icon size="small" variant="text" @click="openEdit(item)">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn icon size="small" variant="text" color="error" @click="handleDelete(item)">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </template>
+            <v-menu v-else>
+              <template #activator="{ props }">
+                <v-btn icon size="small" variant="text" v-bind="props">
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list density="compact">
+                <v-list-item prepend-icon="mdi-pencil" title="Edit" @click="openEdit(item)" />
+                <v-list-item prepend-icon="mdi-delete" title="Delete" class="text-error" @click="handleDelete(item)" />
+              </v-list>
+            </v-menu>
           </template>
         </template>
       </v-data-table-server>
@@ -111,10 +123,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCatalogStore } from '@/stores/catalog'
-import { useConfirm, useNotify } from '@/composables'
+import { useConfirm, useNotify, useBreakpoint } from '@/composables'
 import type { Item } from '@/types'
 import PageHeader from '@/components/common/PageHeader.vue'
 import FormDialog from '@/components/common/FormDialog.vue'
@@ -124,6 +136,7 @@ const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const { confirm } = useConfirm()
 const notify = useNotify()
+const { isMobile } = useBreakpoint()
 
 const page = ref(1)
 const itemsPerPage = ref(20)
@@ -141,14 +154,14 @@ const previewItemName = ref('')
 
 let searchTimeout: ReturnType<typeof setTimeout>
 
-const headers = [
+const headers = computed(() => [
   { title: '', key: 'image', sortable: false, width: '60px' },
   { title: 'Name', key: 'name', sortable: true },
-  { title: 'Description', key: 'description', sortable: false },
+  ...(!isMobile.value ? [{ title: 'Description', key: 'description', sortable: false }] : []),
   { title: 'Category', key: 'category', sortable: false },
-  { title: 'Unit', key: 'unit_of_measure', sortable: false },
+  ...(!isMobile.value ? [{ title: 'Unit', key: 'unit_of_measure', sortable: false }] : []),
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
-]
+])
 
 onMounted(async () => {
   await catalogStore.fetchCategories()

@@ -38,10 +38,10 @@ class Checkout(Base):
     inventory_id: Mapped[int] = mapped_column(Integer, ForeignKey("inventory.id"), nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    returned_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     checkout_date: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
-    due_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     return_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String, nullable=False, default="active", index=True)
     notes: Mapped[str | None] = mapped_column(String, nullable=True)

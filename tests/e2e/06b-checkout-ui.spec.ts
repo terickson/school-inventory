@@ -16,9 +16,6 @@ import {
 let browser: Browser;
 let page: Page;
 let checkoutItemName: string;
-let extendItemName: string;
-let testInventoryId: number;
-let extendCheckoutId: number;
 
 beforeAll(async () => {
   await waitForBackend();
@@ -26,7 +23,6 @@ beforeAll(async () => {
 
   const suffix = uniqueSuffix();
   checkoutItemName = `CoUI Item ${suffix}`;
-  extendItemName = `ExtUI Item ${suffix}`;
 
   const cats = await getCategories();
   const categoryId = cats.items[0].id;
@@ -46,29 +42,11 @@ beforeAll(async () => {
     min_quantity: 5,
   });
 
-  // Item for extend test
-  const item2 = await createItem({
-    name: extendItemName,
-    category_id: categoryId,
-    unit_of_measure: 'unit',
-  });
-  const inv2 = await createInventory({
-    item_id: item2.id,
-    locator_id: locator.id,
-    quantity: 20,
-    min_quantity: 3,
-  });
-  testInventoryId = inv2.id;
-
-  // Pre-create a checkout to extend
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 3);
-  const checkout = await apiCreateCheckout({
-    inventory_id: inv2.id,
+  // Pre-create a checkout
+  await apiCreateCheckout({
+    inventory_id: inv1.id,
     quantity: 2,
-    due_date: dueDate.toISOString().split('T')[0],
   });
-  extendCheckoutId = checkout.id;
 
   browser = await launchBrowser();
   page = await createPage(browser);
@@ -89,76 +67,12 @@ describe('Checkout UI Operations', () => {
 
   test('Verify pre-created checkout appears', async () => {
     const tableText = await page.$eval('[data-testid="checkouts-table"]', (el) => el.textContent);
-    expect(tableText).toContain(extendItemName);
+    expect(tableText).toContain(checkoutItemName);
   });
 
-  test('Extend checkout due date via UI', async () => {
-    // Find the Extend button for our checkout
-    const rows = await page.$$('[data-testid="checkouts-table"] tbody tr');
-    let extendBtn = null;
-    for (const row of rows) {
-      const text = await row.evaluate((el: Element) => el.textContent);
-      if (text?.includes(extendItemName)) {
-        const btns = await row.$$('.v-btn');
-        for (const btn of btns) {
-          const btnText = await btn.evaluate((el: Element) => el.textContent);
-          if (btnText?.includes('Extend')) {
-            extendBtn = btn;
-            break;
-          }
-        }
-        break;
-      }
-    }
-    expect(extendBtn).not.toBeNull();
-    await extendBtn!.click();
-
-    // Wait for extend dialog
-    await page.waitForSelector('.v-dialog', { visible: true, timeout: 5000 });
-    await new Promise((r) => setTimeout(r, 500));
-
-    // Set new due date (14 days from now)
-    const newDate = new Date();
-    newDate.setDate(newDate.getDate() + 14);
-    const dateStr = newDate.toISOString().split('T')[0];
-
-    // Set date value via evaluate (typing into date inputs is unreliable in headless Chrome)
-    await page.evaluate((date: string) => {
-      const input = document.querySelector('.v-dialog input[type="date"]') as HTMLInputElement;
-      if (input) {
-        const nativeSetter = Object.getOwnPropertyDescriptor(
-          window.HTMLInputElement.prototype, 'value',
-        )!.set!;
-        nativeSetter.call(input, date);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, dateStr);
-    await new Promise((r) => setTimeout(r, 300));
-
-    // Save
-    await page.click('[data-testid="form-dialog-save"]');
-    await new Promise((r) => setTimeout(r, 2000));
-
-    // Verify via API
-    const checkout = await apiGet(`/checkouts/${extendCheckoutId}`);
-    expect(checkout.due_date).toContain(dateStr);
-  });
-
-  test('Switch to Overdue tab', async () => {
+  test('Switch to All tab shows checkouts', async () => {
     const tabs = await page.$$('.v-tab');
-    expect(tabs.length).toBeGreaterThanOrEqual(3);
-    await tabs[1].click(); // Overdue tab
-    await new Promise((r) => setTimeout(r, 1500));
-
-    // Table should still be present
-    const table = await page.$('[data-testid="checkouts-table"]');
-    expect(table).not.toBeNull();
-  });
-
-  test('Switch to All tab shows returned checkouts', async () => {
-    const tabs = await page.$$('.v-tab');
-    await tabs[2].click(); // All tab
+    await tabs[1].click(); // All tab
     await new Promise((r) => setTimeout(r, 1500));
 
     const table = await page.$('[data-testid="checkouts-table"]');
@@ -171,6 +85,6 @@ describe('Checkout UI Operations', () => {
     await new Promise((r) => setTimeout(r, 1500));
 
     const tableText = await page.$eval('[data-testid="checkouts-table"]', (el) => el.textContent);
-    expect(tableText).toContain(extendItemName);
+    expect(tableText).toContain(checkoutItemName);
   });
 });

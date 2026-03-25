@@ -62,7 +62,7 @@ describe('Item Images', () => {
 
     // Search for the test item
     const searchInput = await page.waitForSelector(
-      '[data-testid="items-table"] .v-toolbar .v-text-field input',
+      '[data-testid="items-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(testItemName);
@@ -134,7 +134,7 @@ describe('Item Images', () => {
 
     // Search for the test item
     const searchInput = await page.waitForSelector(
-      '[data-testid="items-table"] .v-toolbar .v-text-field input',
+      '[data-testid="items-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(testItemName);

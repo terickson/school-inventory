@@ -92,7 +92,7 @@ describe('Inventory UI Operations', () => {
   test('Adjust stock via UI', async () => {
     // Search for our test item in the inventory table
     const searchInput = await page.waitForSelector(
-      '[data-testid="inventory-table"] .v-toolbar .v-text-field input',
+      '[data-testid="inventory-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type(itemName);
@@ -151,7 +151,7 @@ describe('Inventory UI Operations', () => {
   test('Filter by low stock only', async () => {
     // Clear search first
     const searchInput = await page.waitForSelector(
-      '[data-testid="inventory-table"] .v-toolbar .v-text-field input',
+      '[data-testid="inventory-table"] [data-testid="search-input"] input',
     );
     await searchInput!.click({ clickCount: 3 });
     await searchInput!.type('');

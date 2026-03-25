@@ -23,15 +23,15 @@
         @update:options="loadItems"
       >
         <template #top>
-          <v-toolbar flat>
+          <div :class="isMobile ? 'd-flex flex-column ga-2 pa-4' : 'd-flex align-center ga-2 pa-4'">
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
               label="Search inventory..."
               hide-details
               density="compact"
-              class="mx-4"
-              style="max-width: 250px"
+              data-testid="search-input"
+              :style="isMobile ? '' : 'max-width: 250px'"
               @update:model-value="debouncedSearch"
             />
             <v-select
@@ -43,8 +43,7 @@
               hide-details
               density="compact"
               clearable
-              class="mx-2"
-              style="max-width: 180px"
+              :style="isMobile ? '' : 'max-width: 180px'"
               @update:model-value="() => loadItems()"
             />
             <v-checkbox
@@ -52,10 +51,9 @@
               label="Low stock only"
               hide-details
               density="compact"
-              class="mx-2"
               @update:model-value="() => loadItems()"
             />
-          </v-toolbar>
+          </div>
         </template>
 
         <template #item.item="{ item }">
@@ -71,7 +69,7 @@
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn icon size="small" variant="text" @click="openAdjust(item)">
+          <v-btn icon :size="isMobile ? 'default' : 'small'" variant="text" @click="openAdjust(item)">
             <v-icon>mdi-tune</v-icon>
             <v-tooltip activator="parent" location="top">Adjust stock</v-tooltip>
           </v-btn>
@@ -143,12 +141,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useInventoryStore } from '@/stores/inventory'
 import { useLocatorsStore } from '@/stores/locators'
 import { useCatalogStore } from '@/stores/catalog'
-import { useNotify } from '@/composables'
+import { useNotify, useBreakpoint } from '@/composables'
 import type { InventoryRecord } from '@/types'
 import PageHeader from '@/components/common/PageHeader.vue'
 import FormDialog from '@/components/common/FormDialog.vue'
@@ -160,6 +158,7 @@ const inventoryStore = useInventoryStore()
 const locatorsStore = useLocatorsStore()
 const catalogStore = useCatalogStore()
 const notify = useNotify()
+const { isMobile } = useBreakpoint()
 
 const page = ref(1)
 const itemsPerPage = ref(20)
@@ -188,14 +187,14 @@ const createForm = reactive({
 
 let searchTimeout: ReturnType<typeof setTimeout>
 
-const headers = [
+const headers = computed(() => [
   { title: 'Item', key: 'item', sortable: false },
   { title: 'Location', key: 'location', sortable: false },
   { title: 'Stock', key: 'stock', sortable: false },
   { title: 'Quantity', key: 'quantity', sortable: true },
-  { title: 'Min', key: 'min_quantity', sortable: false },
+  ...(!isMobile.value ? [{ title: 'Min', key: 'min_quantity', sortable: false }] : []),
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
-]
+])
 
 let itemSearchTimeout: ReturnType<typeof setTimeout>
 

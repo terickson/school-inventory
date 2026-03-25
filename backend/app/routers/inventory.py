@@ -111,7 +111,7 @@ def delete_inventory(
     # Check for open checkouts
     open_checkouts = db.query(Checkout).filter(
         Checkout.inventory_id == inventory_id,
-        Checkout.status.in_(["active", "overdue"]),
+        Checkout.status == "active",
     ).first()
     if open_checkouts:
         raise HTTPException(

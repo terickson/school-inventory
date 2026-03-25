@@ -34,11 +34,6 @@ describe('Dashboard', () => {
     });
     expect(activeCheckouts).not.toBeNull();
 
-    const overdue = await page.waitForSelector('[data-testid="stat-overdue"]', {
-      timeout: 5000,
-    });
-    expect(overdue).not.toBeNull();
-
     const lowStock = await page.waitForSelector('[data-testid="stat-low-stock"]', {
       timeout: 5000,
     });
@@ -55,11 +50,6 @@ describe('Dashboard', () => {
       el.textContent?.trim(),
     );
     expect(activeText).toMatch(/^\d+$/);
-  });
-
-  test('Dashboard contains overdue section', async () => {
-    const dashboard = await page.$eval('[data-testid="dashboard"]', (el) => el.textContent);
-    expect(dashboard).toContain('Overdue');
   });
 
   test('Dashboard contains low stock section', async () => {

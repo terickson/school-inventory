@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     admin_password: str = "AdminPass123!"
     cors_origins: list[str] = ["http://localhost:5173"]
     environment: str = "development"
-    default_checkout_days: int = 7
     upload_dir: str = "uploads"
     max_image_size_mb: int = 5
 

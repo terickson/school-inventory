@@ -18,14 +18,6 @@ beforeEach(() => {
 })
 
 describe('CheckoutForm', () => {
-  it('sets default due date to 7 days from now', () => {
-    const vm = mountForm().vm as any
-    const expected = new Date()
-    expected.setDate(expected.getDate() + 7)
-    const expectedStr = expected.toISOString().split('T')[0]
-    expect(vm.form.due_date).toBe(expectedStr)
-  })
-
   it('starts with default form values', () => {
     const vm = mountForm().vm as any
     expect(vm.form.inventory_id).toBeNull()

@@ -31,12 +31,25 @@
           hide-default-footer
         >
           <template #item.actions="{ item }">
-            <v-btn icon size="small" variant="text" @click="openEditSub(item)">
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn icon size="small" variant="text" color="error" @click="handleDeleteSub(item)">
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
+            <template v-if="!isMobile">
+              <v-btn icon size="small" variant="text" @click="openEditSub(item)">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn icon size="small" variant="text" color="error" @click="handleDeleteSub(item)">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </template>
+            <v-menu v-else>
+              <template #activator="{ props }">
+                <v-btn icon size="small" variant="text" v-bind="props">
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list density="compact">
+                <v-list-item prepend-icon="mdi-pencil" title="Edit" @click="openEditSub(item)" />
+                <v-list-item prepend-icon="mdi-delete" title="Delete" class="text-error" @click="handleDeleteSub(item)" />
+              </v-list>
+            </v-menu>
           </template>
         </v-data-table-server>
 
@@ -67,7 +80,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLocatorsStore } from '@/stores/locators'
-import { useConfirm, useNotify } from '@/composables'
+import { useConfirm, useNotify, useBreakpoint } from '@/composables'
 import type { Sublocator } from '@/types'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -78,6 +91,7 @@ const route = useRoute()
 const locatorsStore = useLocatorsStore()
 const { confirm } = useConfirm()
 const notify = useNotify()
+const { isMobile } = useBreakpoint()
 
 const locatorId = Number(route.params.id)
 const subDialogOpen = ref(false)

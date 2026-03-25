@@ -6,10 +6,10 @@ A web-based inventory management system for tracking school supplies across phys
 
 - **Two-level location hierarchy** (Locator/Closet + Sublocator/Shelf)
 - **Quantity-based tracking** — designed for consumable supplies, not asset tags
-- **Checkout/Return system** with due dates and overdue alerts
+- **Checkout/Return system** for tracking borrowed items (partial returns supported)
 - **Role-based access control** — Admin and Teacher roles
-- **Dashboard** with summary stats, overdue checkouts, and low-stock alerts
-- **Responsive UI** — works on laptops and phones
+- **Dashboard** with summary stats and low-stock alerts
+- **Responsive mobile-first UI** — optimized for phones with bottom navigation, stacked data tables, and touch-friendly action menus
 - **Self-hosted and free** — no per-seat licensing
 
 ## User Roles & Permissions
@@ -23,8 +23,8 @@ The system uses **role-based access control (RBAC)** with two roles and resource
 │                        ADMINISTRATOR                                │
 │                                                                     │
 │  Full system access. Manages users, catalog, categories,            │
-│  all locations, all inventory, all checkouts. Can extend             │
-│  due dates and download database backups.                           │
+│  all locations, all inventory, all checkouts. Can download           │
+│  database backups.                                                  │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                          TEACHER                                    │
@@ -108,8 +108,6 @@ Legend:  ● = full access    ◐ = own resources only    ○ = no access
 │  POST   /checkouts               │     ●     │  ◐ self   │
 │  GET    /checkouts/{id}          │     ●     │  ◐ own¹   │
 │  POST   /checkouts/{id}/return   │     ●     │  ◐ own¹   │
-│  POST   /checkouts/{id}/extend   │     ●     │     ○     │
-│  GET    /checkouts/overdue       │     ●     │  ◐ own    │
 │  GET    /checkouts/summary       │     ●     │  ◐ own    │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ ADMIN                            │           │           │
@@ -150,7 +148,6 @@ Legend:  ● = full access    ◐ = own resources only    ○ = no access
 │  Add Category                    │  visible  │  hidden   │
 │  Edit/Delete Category            │  visible  │  hidden   │
 │  Add Stock (inventory)           │  visible  │  hidden   │
-│  Extend Checkout                 │  visible  │  hidden   │
 │  Checkout on behalf of others    │  visible  │  hidden   │
 │  New Checkout (for self)         │  visible  │  visible  │
 │  Return Items                    │  visible  │  visible  │
@@ -418,7 +415,6 @@ Common `sqlite3` commands:
 .tables                                          -- List all tables
 .schema users                                    -- Show table schema
 SELECT * FROM users;                             -- Query users
-SELECT * FROM checkouts WHERE status = 'overdue'; -- Find overdue checkouts
 SELECT i.name, inv.quantity, inv.min_quantity
   FROM inventory inv JOIN items i ON i.id = inv.item_id
   WHERE inv.quantity < inv.min_quantity;          -- Low stock report
@@ -483,7 +479,6 @@ This uses the SQLite backup API to create a consistent snapshot of the database,
 | `ADMIN_PASSWORD`             | `AdminPass123!`                  | Default admin password             |
 | `CORS_ORIGINS`               | `["http://localhost:5173"]`      | Allowed CORS origins               |
 | `ENVIRONMENT`                | `development`                    | `development` or `production`      |
-| `DEFAULT_CHECKOUT_DAYS`      | `7`                              | Default checkout duration          |
 | `UPLOAD_DIR`                 | `uploads`                        | Directory for item images          |
 | `MAX_IMAGE_SIZE_MB`          | `5`                              | Max image upload size in MB        |
 
@@ -590,8 +585,9 @@ school-inventory/
 
 1. Go to **Checkouts** and click **New Checkout**
 2. Select the inventory item (shown with location and available quantity)
-3. Enter the quantity to borrow and a due date
+3. Enter the quantity to borrow
 4. Click **Save** to complete the checkout
 5. The available quantity in inventory decreases automatically
 6. To return, find the checkout and click **Return**
-7. The inventory quantity is restored upon return
+7. Enter the quantity to return (partial returns are supported)
+8. The inventory quantity is restored upon return. If only some items are returned, the checkout stays active until all items are back
