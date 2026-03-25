@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.checkout import Inventory, Checkout, AuditLog
+from app.models.item import Item
 from app.schemas.checkout import (
     InventoryCreate, InventoryUpdate, InventoryAdjust,
     CheckoutCreate, CheckoutReturn,
@@ -22,7 +23,8 @@ def get_inventory(db: Session, inventory_id: int) -> Inventory | None:
 def get_inventory_records(
     db: Session, skip: int = 0, limit: int = 20,
     locator_id: int | None = None, item_id: int | None = None,
-    low_stock: bool = False, sort_by: str | None = None, sort_order: str = "asc",
+    low_stock: bool = False, search: str | None = None,
+    sort_by: str | None = None, sort_order: str = "asc",
 ):
     query = db.query(Inventory).options(
         joinedload(Inventory.item),
@@ -35,6 +37,8 @@ def get_inventory_records(
         query = query.filter(Inventory.item_id == item_id)
     if low_stock:
         query = query.filter(Inventory.quantity <= Inventory.min_quantity, Inventory.min_quantity > 0)
+    if search:
+        query = query.join(Item).filter(Item.name.ilike(f"%{search}%"))
     total = query.count()
     if sort_by and hasattr(Inventory, sort_by):
         col = getattr(Inventory, sort_by)
@@ -190,7 +194,6 @@ def return_checkout(db: Session, checkout: Checkout, return_in: CheckoutReturn) 
 
 
 def get_checkout_summary(db: Session, user_id: int | None = None):
-    from app.models.item import Item
     total_items = db.query(Item).count()
 
     checkout_query = db.query(Checkout).filter(Checkout.status == "active")

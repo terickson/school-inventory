@@ -26,12 +26,14 @@ def list_inventory(
     locator_id: int | None = None,
     item_id: int | None = None,
     low_stock: bool = False,
+    search: str | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     total, records = checkout_crud.get_inventory_records(
         db, skip=pagination["skip"], limit=pagination["limit"],
         locator_id=locator_id, item_id=item_id, low_stock=low_stock,
+        search=search,
         sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {

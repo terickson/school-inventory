@@ -59,6 +59,17 @@ class TestCheckoutEndpoints:
         assert resp.status_code == 200
         assert resp.json()["total"] >= 1
 
+    def test_list_checkouts_filter_status(self, client, admin_headers, admin_user, inventory_record, db):
+        active = Checkout(inventory_id=inventory_record.id, user_id=admin_user.id, quantity=1, status="active")
+        returned = Checkout(inventory_id=inventory_record.id, user_id=admin_user.id, quantity=1, status="returned")
+        db.add_all([active, returned])
+        db.commit()
+        resp = client.get("/api/v1/checkouts?status=active", headers=admin_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 1
+        assert all(c["status"] == "active" for c in data["items"])
+
     def test_get_checkout(self, client, admin_headers, admin_user, inventory_record, db):
         co = Checkout(
             inventory_id=inventory_record.id,

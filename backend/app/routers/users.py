@@ -16,12 +16,13 @@ def list_users(
     pagination: dict = Depends(pagination_params),
     role: str | None = None,
     is_active: bool | None = None,
+    search: str | None = None,
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     total, users = user_crud.get_users(
         db, skip=pagination["skip"], limit=pagination["limit"],
-        role=role, is_active=is_active,
+        role=role, is_active=is_active, search=search,
         sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {

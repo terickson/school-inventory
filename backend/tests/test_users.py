@@ -52,6 +52,18 @@ class TestUserEndpoints:
         for u in resp.json()["items"]:
             assert u["role"] == "teacher"
 
+    def test_list_users_search(self, client, admin_headers, teacher_user):
+        resp = client.get("/api/v1/users?search=teacher1", headers=admin_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] >= 1
+        assert any(u["username"] == "teacher1" for u in data["items"])
+
+    def test_list_users_search_no_match(self, client, admin_headers, teacher_user):
+        resp = client.get("/api/v1/users?search=nonexistent", headers=admin_headers)
+        assert resp.status_code == 200
+        assert resp.json()["total"] == 0
+
     def test_get_user(self, client, admin_headers, teacher_user):
         resp = client.get(f"/api/v1/users/{teacher_user.id}", headers=admin_headers)
         assert resp.status_code == 200

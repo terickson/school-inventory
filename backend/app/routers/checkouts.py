@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -61,7 +61,7 @@ def create_checkout(
 @router.get("", response_model=dict)
 def list_checkouts(
     pagination: dict = Depends(pagination_params),
-    status_filter: str | None = None,
+    status_filter: str | None = Query(None, alias="status"),
     user_id: int | None = None,
     inventory_id: int | None = None,
     current_user: User = Depends(get_current_user),

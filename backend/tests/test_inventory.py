@@ -52,6 +52,16 @@ class TestInventoryEndpoints:
         assert resp.status_code == 200
         assert resp.json()["total"] >= 1
 
+    def test_list_inventory_search(self, client, admin_headers, inventory_record):
+        resp = client.get("/api/v1/inventory?search=Test Item", headers=admin_headers)
+        assert resp.status_code == 200
+        assert resp.json()["total"] >= 1
+
+    def test_list_inventory_search_no_match(self, client, admin_headers, inventory_record):
+        resp = client.get("/api/v1/inventory?search=nonexistent", headers=admin_headers)
+        assert resp.status_code == 200
+        assert resp.json()["total"] == 0
+
     def test_get_inventory(self, client, admin_headers, inventory_record):
         resp = client.get(f"/api/v1/inventory/{inventory_record.id}", headers=admin_headers)
         assert resp.status_code == 200

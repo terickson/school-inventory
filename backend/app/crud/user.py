@@ -19,12 +19,17 @@ def get_user_by_email(db: Session, email: str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 20, role: str | None = None, is_active: bool | None = None, sort_by: str | None = None, sort_order: str = "asc"):
+def get_users(db: Session, skip: int = 0, limit: int = 20, role: str | None = None, is_active: bool | None = None, search: str | None = None, sort_by: str | None = None, sort_order: str = "asc"):
     query = db.query(User)
     if role is not None:
         query = query.filter(User.role == role)
     if is_active is not None:
         query = query.filter(User.is_active == is_active)
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(
+            User.username.ilike(pattern) | User.full_name.ilike(pattern) | User.email.ilike(pattern)
+        )
     total = query.count()
     if sort_by and hasattr(User, sort_by):
         col = getattr(User, sort_by)
