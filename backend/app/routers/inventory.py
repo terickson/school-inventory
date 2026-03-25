@@ -58,6 +58,16 @@ def create_inventory(
     item = item_crud.get_item(db, inv_in.item_id)
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    # Check for duplicate inventory record
+    existing = checkout_crud.get_inventory_by_location(
+        db, inv_in.item_id, inv_in.locator_id, inv_in.sublocator_id,
+    )
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This item already has an inventory record for this location and shelf. "
+                   "Use the adjust endpoint to change the quantity instead.",
+        )
     return checkout_crud.create_inventory(db, inv_in)
 
 

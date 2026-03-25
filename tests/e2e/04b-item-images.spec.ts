@@ -84,6 +84,42 @@ describe('Item Images', () => {
     expect(hasImage).toBe(true);
   });
 
+  test('Clicking image thumbnail opens preview dialog', async () => {
+    // The catalog page should still be loaded with the test item visible from previous test
+    // Click the thumbnail image in the test item's row
+    const clicked = await page.evaluate((name: string) => {
+      const table = document.querySelector('[data-testid="items-table"]');
+      if (!table) return false;
+      const rows = table.querySelectorAll('tbody tr');
+      for (const row of Array.from(rows)) {
+        if (row.textContent?.includes(name)) {
+          const trigger = row.querySelector('[data-testid="image-preview-trigger"]');
+          if (trigger) {
+            (trigger as HTMLElement).click();
+            return true;
+          }
+        }
+      }
+      return false;
+    }, testItemName);
+    expect(clicked).toBe(true);
+
+    // Wait for the preview dialog to appear
+    await page.waitForSelector('[data-testid="image-preview-dialog"]', { visible: true, timeout: 5000 });
+
+    // Verify the dialog contains an image
+    const hasImage = await page.evaluate(() => {
+      const dialog = document.querySelector('[data-testid="image-preview-dialog"]');
+      return dialog?.querySelector('img') !== null;
+    });
+    expect(hasImage).toBe(true);
+
+    // Close the dialog
+    const closeBtn = await page.$('[data-testid="image-preview-dialog"] .mdi-close');
+    if (closeBtn) await closeBtn.click();
+    await new Promise((r) => setTimeout(r, 500));
+  });
+
   test('Delete image via API', async () => {
     await deleteItemImage(testItemId);
     const item = await apiGet(`/items/${testItemId}`);

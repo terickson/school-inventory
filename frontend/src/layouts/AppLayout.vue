@@ -40,17 +40,17 @@
           data-testid="nav-locators"
         />
         <v-list-item
-          prepend-icon="mdi-book-open-variant"
-          title="Catalog"
-          :to="{ name: 'catalog' }"
-          data-testid="nav-catalog"
-        />
-        <v-list-item
           v-if="authStore.isAdmin"
           prepend-icon="mdi-shape"
           title="Categories"
           :to="{ name: 'categories' }"
           data-testid="nav-categories"
+        />
+        <v-list-item
+          prepend-icon="mdi-book-open-variant"
+          title="Catalog"
+          :to="{ name: 'catalog' }"
+          data-testid="nav-catalog"
         />
         <v-list-item
           prepend-icon="mdi-package-variant-closed"

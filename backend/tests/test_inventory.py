@@ -25,6 +25,16 @@ class TestInventoryEndpoints:
         }, headers=admin_headers)
         assert resp.status_code == 404
 
+    def test_create_inventory_duplicate(self, client, admin_headers, inventory_record):
+        resp = client.post("/api/v1/inventory", json={
+            "item_id": inventory_record.item_id,
+            "locator_id": inventory_record.locator_id,
+            "sublocator_id": inventory_record.sublocator_id,
+            "quantity": 10,
+        }, headers=admin_headers)
+        assert resp.status_code == 409
+        assert "already has an inventory record" in resp.json()["detail"]
+
     def test_list_inventory(self, client, admin_headers, inventory_record):
         resp = client.get("/api/v1/inventory", headers=admin_headers)
         assert resp.status_code == 200

@@ -1,8 +1,11 @@
 import os
+import re
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
 from app.database import SessionLocal
@@ -53,6 +56,28 @@ app.include_router(checkouts.router, prefix="/api/v1")
 # Serve uploaded images (create dir eagerly so StaticFiles doesn't fail)
 os.makedirs(settings.upload_dir, exist_ok=True)
 app.mount("/api/v1/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+
+
+_UNIQUE_RE = re.compile(r"UNIQUE constraint failed: (\w+)\.(\w+)")
+_FRIENDLY_NAMES = {
+    "items.name": "An item with this name already exists. Please choose a different name.",
+    "categories.name": "A category with this name already exists.",
+    "users.username": "This username is already taken.",
+    "users.email": "This email address is already in use.",
+    "locators.name": "You already have a location with this name.",
+    "sublocators.name": "A shelf with this name already exists in this location.",
+    "inventory.item_id": "This item already has an inventory record for this location and shelf.",
+}
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    detail = "A record with this value already exists. Please use a different value."
+    match = _UNIQUE_RE.search(str(exc.orig))
+    if match:
+        table, column = match.group(1), match.group(2)
+        detail = _FRIENDLY_NAMES.get(f"{table}.{column}", detail)
+    return JSONResponse(status_code=409, content={"detail": detail})
 
 
 @app.get("/health")

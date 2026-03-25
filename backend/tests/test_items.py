@@ -113,6 +113,15 @@ class TestItemEndpoints:
         assert resp.status_code == 201
         assert resp.json()["name"] == "Pencils"
 
+    def test_create_item_duplicate_name(self, client, admin_headers, item, category):
+        resp = client.post("/api/v1/items", json={
+            "name": item.name,
+            "category_id": category.id,
+            "unit_of_measure": "box",
+        }, headers=admin_headers)
+        assert resp.status_code == 409
+        assert "already exists" in resp.json()["detail"]
+
     def test_create_item_invalid_category(self, client, admin_headers):
         resp = client.post("/api/v1/items", json={
             "name": "Pencils",
@@ -150,6 +159,19 @@ class TestItemEndpoints:
         }, headers=admin_headers)
         assert resp.status_code == 200
         assert resp.json()["name"] == "Updated Item"
+
+    def test_update_item_duplicate_name(self, client, admin_headers, category, db):
+        from app.models.item import Item
+        item1 = Item(name="Item One", category_id=category.id, unit_of_measure="unit")
+        item2 = Item(name="Item Two", category_id=category.id, unit_of_measure="unit")
+        db.add_all([item1, item2])
+        db.commit()
+        db.refresh(item2)
+        resp = client.patch(f"/api/v1/items/{item2.id}", json={
+            "name": "Item One",
+        }, headers=admin_headers)
+        assert resp.status_code == 409
+        assert "already exists" in resp.json()["detail"]
 
     def test_delete_item(self, client, admin_headers, item):
         resp = client.delete(f"/api/v1/items/{item.id}", headers=admin_headers)

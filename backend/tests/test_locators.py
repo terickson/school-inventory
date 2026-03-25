@@ -7,6 +7,13 @@ class TestLocatorEndpoints:
         assert resp.status_code == 201
         assert resp.json()["name"] == "Supply Closet"
 
+    def test_create_locator_duplicate_name(self, client, admin_headers, locator):
+        resp = client.post("/api/v1/locators", json={
+            "name": locator.name,
+        }, headers=admin_headers)
+        assert resp.status_code == 409
+        assert "already have a location" in resp.json()["detail"]
+
     def test_list_locators_admin(self, client, admin_headers, locator):
         resp = client.get("/api/v1/locators", headers=admin_headers)
         assert resp.status_code == 200
@@ -34,6 +41,19 @@ class TestLocatorEndpoints:
         assert resp.status_code == 200
         assert resp.json()["name"] == "Updated Closet"
 
+    def test_update_locator_duplicate_name(self, client, admin_headers, admin_user, db):
+        from app.models.locator import Locator
+        loc1 = Locator(name="Room A", user_id=admin_user.id)
+        loc2 = Locator(name="Room B", user_id=admin_user.id)
+        db.add_all([loc1, loc2])
+        db.commit()
+        db.refresh(loc2)
+        resp = client.patch(f"/api/v1/locators/{loc2.id}", json={
+            "name": "Room A",
+        }, headers=admin_headers)
+        assert resp.status_code == 409
+        assert "already have a location" in resp.json()["detail"]
+
     def test_delete_locator(self, client, admin_headers, locator):
         resp = client.delete(f"/api/v1/locators/{locator.id}", headers=admin_headers)
         assert resp.status_code == 204
@@ -56,6 +76,15 @@ class TestSublocatorEndpoints:
         )
         assert resp.status_code == 201
         assert resp.json()["name"] == "Shelf 2"
+
+    def test_create_sublocator_duplicate_name(self, client, admin_headers, locator, sublocator):
+        resp = client.post(
+            f"/api/v1/locators/{locator.id}/sublocators",
+            json={"name": sublocator.name},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 409
+        assert "shelf named" in resp.json()["detail"].lower()
 
     def test_list_sublocators(self, client, admin_headers, locator, sublocator):
         resp = client.get(
@@ -81,6 +110,21 @@ class TestSublocatorEndpoints:
         )
         assert resp.status_code == 200
         assert resp.json()["name"] == "Updated Shelf"
+
+    def test_update_sublocator_duplicate_name(self, client, admin_headers, locator, db):
+        from app.models.locator import Sublocator
+        sub1 = Sublocator(name="Shelf A", locator_id=locator.id)
+        sub2 = Sublocator(name="Shelf B", locator_id=locator.id)
+        db.add_all([sub1, sub2])
+        db.commit()
+        db.refresh(sub2)
+        resp = client.patch(
+            f"/api/v1/locators/{locator.id}/sublocators/{sub2.id}",
+            json={"name": "Shelf A"},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 409
+        assert "shelf named" in resp.json()["detail"].lower()
 
     def test_delete_sublocator(self, client, admin_headers, locator, sublocator):
         resp = client.delete(

@@ -25,6 +25,10 @@ def get_locators(db: Session, skip: int = 0, limit: int = 20, user_id: int | Non
     return total, locators
 
 
+def get_locator_by_name(db: Session, user_id: int, name: str) -> Locator | None:
+    return db.query(Locator).filter(Locator.user_id == user_id, Locator.name == name).first()
+
+
 def create_locator(db: Session, locator_in: LocatorCreate, user_id: int) -> Locator:
     locator = Locator(
         name=locator_in.name,
@@ -62,6 +66,10 @@ def get_sublocators(db: Session, locator_id: int, skip: int = 0, limit: int = 20
     total = query.count()
     sublocators = query.offset(skip).limit(limit).all()
     return total, sublocators
+
+
+def get_sublocator_by_name(db: Session, locator_id: int, name: str) -> Sublocator | None:
+    return db.query(Sublocator).filter(Sublocator.locator_id == locator_id, Sublocator.name == name).first()
 
 
 def create_sublocator(db: Session, sublocator_in: SublocatorCreate, locator_id: int) -> Sublocator:

@@ -178,6 +178,11 @@ def create_item(
     cat = item_crud.get_category(db, item_in.category_id)
     if not cat:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    if item_crud.get_item_by_name(db, item_in.name):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"An item named '{item_in.name}' already exists. Please choose a different name.",
+        )
     return _enrich_item(item_crud.create_item(db, item_in))
 
 
@@ -213,6 +218,13 @@ def update_item(
     item = item_crud.get_item(db, item_id)
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    if item_in.name and item_in.name != item.name:
+        existing = item_crud.get_item_by_name(db, item_in.name)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"An item named '{item_in.name}' already exists. Please choose a different name.",
+            )
     return _enrich_item(item_crud.update_item(db, item, item_in))
 
 

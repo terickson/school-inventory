@@ -48,6 +48,11 @@ def create_sublocator(
     db: Session = Depends(get_db),
 ):
     _get_locator_or_404(db, locator_id, current_user)
+    if locator_crud.get_sublocator_by_name(db, locator_id, sub_in.name):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"A shelf named '{sub_in.name}' already exists in this location. Please choose a different name.",
+        )
     return locator_crud.create_sublocator(db, sub_in, locator_id)
 
 
@@ -77,6 +82,13 @@ def update_sublocator(
     sub = locator_crud.get_sublocator(db, sublocator_id)
     if not sub or sub.locator_id != locator_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sublocator not found")
+    if sub_in.name and sub_in.name != sub.name:
+        existing = locator_crud.get_sublocator_by_name(db, locator_id, sub_in.name)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"A shelf named '{sub_in.name}' already exists in this location. Please choose a different name.",
+            )
     return locator_crud.update_sublocator(db, sub, sub_in)
 
 

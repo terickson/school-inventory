@@ -51,7 +51,14 @@
         </template>
 
         <template #item.image="{ item }">
-          <v-avatar size="40" rounded="sm" color="grey-lighten-3">
+          <v-avatar
+            size="40"
+            rounded="sm"
+            color="grey-lighten-3"
+            :style="item.image_url ? 'cursor: pointer' : ''"
+            :data-testid="item.image_url ? 'image-preview-trigger' : undefined"
+            @click="item.image_url && openImagePreview(item)"
+          >
             <v-img v-if="item.image_url" :src="item.image_url" cover />
             <v-icon v-else size="24" color="grey">mdi-package-variant-closed</v-icon>
           </v-avatar>
@@ -75,6 +82,21 @@
         </template>
       </v-data-table-server>
     </v-card>
+
+    <v-dialog v-model="previewOpen" max-width="800" data-testid="image-preview-dialog">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <span>{{ previewItemName }}</span>
+          <v-spacer />
+          <v-btn icon variant="text" @click="previewOpen = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text class="d-flex justify-center pa-4">
+          <v-img :src="previewImageUrl!" max-height="70vh" max-width="100%" contain />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
 
     <FormDialog
       v-model="dialogOpen"
@@ -113,6 +135,9 @@ const saving = ref(false)
 const editingItem = ref<Item | null>(null)
 const itemFormRef = ref<InstanceType<typeof ItemForm>>()
 const categoryOptions = ref<{ id: number; name: string }[]>([])
+const previewOpen = ref(false)
+const previewImageUrl = ref<string | null>(null)
+const previewItemName = ref('')
 
 let searchTimeout: ReturnType<typeof setTimeout>
 
@@ -151,6 +176,12 @@ function debouncedSearch() {
   }, 300)
 }
 
+function openImagePreview(item: Item) {
+  previewImageUrl.value = item.image_url
+  previewItemName.value = item.name
+  previewOpen.value = true
+}
+
 function openCreate() {
   editingItem.value = null
   dialogOpen.value = true
@@ -174,22 +205,35 @@ async function handleSave() {
   saving.value = true
   try {
     const data = itemFormRef.value.getData()
+    const isEdit = !!editingItem.value
     let savedItem: Item
-    if (editingItem.value) {
-      savedItem = await catalogStore.updateItem(editingItem.value.id, data)
+    if (isEdit) {
+      savedItem = await catalogStore.updateItem(editingItem.value!.id, data)
     } else {
       savedItem = await catalogStore.createItem(data)
     }
 
-    // Handle image upload/removal
+    // Handle image upload/removal — roll back item creation if image fails
     const imageFile = itemFormRef.value.getImageFile()
-    if (imageFile) {
-      await catalogStore.uploadItemImage(savedItem.id, imageFile)
-    } else if (itemFormRef.value.shouldRemoveImage()) {
-      await catalogStore.deleteItemImage(savedItem.id)
+    try {
+      if (imageFile) {
+        await catalogStore.uploadItemImage(savedItem.id, imageFile)
+      } else if (itemFormRef.value.shouldRemoveImage()) {
+        await catalogStore.deleteItemImage(savedItem.id)
+      }
+    } catch (imageError) {
+      if (!isEdit) {
+        // Roll back: delete the item we just created so it doesn't linger without an image
+        try {
+          await catalogStore.deleteItem(savedItem.id)
+        } catch {
+          // Best effort cleanup
+        }
+      }
+      throw imageError
     }
 
-    notify.success(editingItem.value ? 'Item updated' : 'Item created')
+    notify.success(isEdit ? 'Item updated' : 'Item created')
     closeDialog()
     loadItems()
   } catch (e) {

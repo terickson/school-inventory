@@ -57,6 +57,10 @@ def get_item(db: Session, item_id: int) -> Item | None:
     return db.query(Item).filter(Item.id == item_id).first()
 
 
+def get_item_by_name(db: Session, name: str) -> Item | None:
+    return db.query(Item).filter(Item.name == name).first()
+
+
 def get_items(db: Session, skip: int = 0, limit: int = 20, search: str | None = None, category_id: int | None = None, sort_by: str | None = None, sort_order: str = "asc"):
     query = db.query(Item).options(joinedload(Item.category))
     if search:

@@ -44,6 +44,20 @@ def get_inventory_records(
     return total, records
 
 
+def get_inventory_by_location(
+    db: Session, item_id: int, locator_id: int, sublocator_id: int | None,
+) -> Inventory | None:
+    query = db.query(Inventory).filter(
+        Inventory.item_id == item_id,
+        Inventory.locator_id == locator_id,
+    )
+    if sublocator_id is not None:
+        query = query.filter(Inventory.sublocator_id == sublocator_id)
+    else:
+        query = query.filter(Inventory.sublocator_id.is_(None))
+    return query.first()
+
+
 def create_inventory(db: Session, inv_in: InventoryCreate) -> Inventory:
     inv = Inventory(
         item_id=inv_in.item_id,

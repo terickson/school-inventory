@@ -42,6 +42,11 @@ def create_locator(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if locator_crud.get_locator_by_name(db, current_user.id, locator_in.name):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"You already have a location named '{locator_in.name}'. Please choose a different name.",
+        )
     return locator_crud.create_locator(db, locator_in, current_user.id)
 
 
@@ -69,6 +74,13 @@ def update_locator(
     if not locator:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
     _check_locator_access(locator, current_user)
+    if locator_in.name and locator_in.name != locator.name:
+        existing = locator_crud.get_locator_by_name(db, locator.user_id, locator_in.name)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"You already have a location named '{locator_in.name}'. Please choose a different name.",
+            )
     return locator_crud.update_locator(db, locator, locator_in)
 
 
