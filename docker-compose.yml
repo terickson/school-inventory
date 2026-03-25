@@ -8,6 +8,7 @@ services:
       - "8000:8000"
     volumes:
       - sqlite_data:/data
+      - uploads_data:/app/uploads
     environment:
       - DATABASE_URL=sqlite:////data/school_inventory.db
       - SECRET_KEY=${SECRET_KEY:-production-secret-change-me-immediately}
@@ -46,3 +47,4 @@ services:
 
 volumes:
   sqlite_data:
+  uploads_data:

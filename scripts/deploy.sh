@@ -170,6 +170,7 @@ download_and_extract() {
         --exclude='*.db' \
         --exclude='*.db-wal' \
         --exclude='*.db-shm' \
+        --exclude='backend/uploads' \
         "${extracted_dir}/" "${INSTALL_DIR}/"
 
     # Cleanup
