@@ -51,8 +51,11 @@
 
         <template #item.actions="{ item }">
           <template v-if="!isMobile">
-            <v-btn icon size="small" variant="text" @click="openEdit(item)">
+            <v-btn icon size="small" variant="text" @click="openEdit(item)" data-testid="edit-user-btn">
               <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn icon size="small" variant="text" @click="openResetPassword(item)" data-testid="reset-password-btn">
+              <v-icon>mdi-lock-reset</v-icon>
             </v-btn>
             <v-btn icon size="small" variant="text" color="error" @click="handleDeactivate(item)">
               <v-icon>mdi-account-off</v-icon>
@@ -66,6 +69,7 @@
             </template>
             <v-list density="compact">
               <v-list-item prepend-icon="mdi-pencil" title="Edit" @click="openEdit(item)" />
+              <v-list-item prepend-icon="mdi-lock-reset" title="Reset Password" @click="openResetPassword(item)" />
               <v-list-item prepend-icon="mdi-account-off" title="Deactivate" class="text-error" @click="handleDeactivate(item)" />
             </v-list>
           </v-menu>
@@ -82,6 +86,37 @@
       @cancel="closeDialog"
     >
       <UserForm ref="userFormRef" :user="editingUser" />
+    </FormDialog>
+
+    <!-- Reset Password Dialog -->
+    <FormDialog
+      v-model="resetPasswordOpen"
+      title="Reset Password"
+      :loading="resettingPassword"
+      @save="handleResetPassword"
+      @cancel="closeResetPassword"
+    >
+      <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+        Set a new password for <strong>{{ resetPasswordUser?.full_name || resetPasswordUser?.username }}</strong>.
+      </v-alert>
+      <v-form ref="resetPasswordFormRef">
+        <v-text-field
+          v-model="newPassword"
+          label="New Password"
+          :type="showPassword ? 'text' : 'password'"
+          :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+          :rules="passwordRules"
+          data-testid="new-password-input"
+          @click:append-inner="showPassword = !showPassword"
+        />
+        <v-text-field
+          v-model="confirmPassword"
+          label="Confirm Password"
+          :type="showPassword ? 'text' : 'password'"
+          :rules="confirmPasswordRules"
+          data-testid="confirm-password-input"
+        />
+      </v-form>
     </FormDialog>
   </div>
 </template>
@@ -108,6 +143,23 @@ const dialogOpen = ref(false)
 const saving = ref(false)
 const editingUser = ref<User | null>(null)
 const userFormRef = ref<InstanceType<typeof UserForm>>()
+
+const resetPasswordOpen = ref(false)
+const resettingPassword = ref(false)
+const resetPasswordUser = ref<User | null>(null)
+const newPassword = ref('')
+const confirmPassword = ref('')
+const showPassword = ref(false)
+const resetPasswordFormRef = ref<InstanceType<typeof import('vuetify/components').VForm>>()
+
+const passwordRules = [
+  (v: string) => !!v || 'Password is required',
+  (v: string) => v.length >= 8 || 'Password must be at least 8 characters',
+]
+const confirmPasswordRules = [
+  (v: string) => !!v || 'Please confirm the password',
+  (v: string) => v === newPassword.value || 'Passwords do not match',
+]
 
 let searchTimeout: ReturnType<typeof setTimeout>
 
@@ -176,6 +228,36 @@ async function handleSave() {
     notify.error(e instanceof Error ? e.message : 'Failed to save user')
   } finally {
     saving.value = false
+  }
+}
+
+function openResetPassword(user: User) {
+  resetPasswordUser.value = user
+  newPassword.value = ''
+  confirmPassword.value = ''
+  showPassword.value = false
+  resetPasswordOpen.value = true
+}
+
+function closeResetPassword() {
+  resetPasswordOpen.value = false
+  resetPasswordUser.value = null
+}
+
+async function handleResetPassword() {
+  if (!resetPasswordFormRef.value) return
+  const { valid } = await resetPasswordFormRef.value.validate()
+  if (!valid) return
+
+  resettingPassword.value = true
+  try {
+    await usersStore.resetPassword(resetPasswordUser.value!.id, { new_password: newPassword.value })
+    notify.success('Password reset successfully')
+    closeResetPassword()
+  } catch (e) {
+    notify.error(e instanceof Error ? e.message : 'Failed to reset password')
+  } finally {
+    resettingPassword.value = false
   }
 }
 
