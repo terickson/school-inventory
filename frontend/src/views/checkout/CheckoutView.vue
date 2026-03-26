@@ -110,9 +110,9 @@ const returnFormRef = ref<InstanceType<typeof ReturnForm>>()
 
 const headers = computed(() => [
   { title: 'Item', key: 'item', sortable: false },
-  ...(!isMobile.value ? [{ title: 'Borrower', key: 'borrower', sortable: false }] : []),
+  { title: 'Borrower', key: 'borrower', sortable: false },
   ...(!isMobile.value ? [{ title: 'Qty', key: 'quantity', sortable: false }] : []),
-  ...(!isMobile.value ? [{ title: 'Returned', key: 'returned', sortable: false }] : []),
+  { title: 'Returned', key: 'returned', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ])
