@@ -23,7 +23,6 @@ beforeAll(async () => {
   await createUser({
     username: teacherUsername,
     full_name: 'Role Test Teacher',
-    email: `${teacherUsername}@school.edu`,
     role: 'teacher',
     password: teacherPassword,
   });

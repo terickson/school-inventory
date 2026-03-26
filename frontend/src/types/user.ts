@@ -3,7 +3,6 @@ export type UserRole = 'admin' | 'teacher'
 export interface User {
   id: number
   username: string
-  email: string
   full_name: string
   role: UserRole
   is_active: boolean
@@ -13,14 +12,12 @@ export interface User {
 
 export interface UserCreate {
   username: string
-  email: string
   full_name: string
   password: string
   role: UserRole
 }
 
 export interface UserUpdate {
-  email?: string
   full_name?: string
   role?: UserRole
   is_active?: boolean

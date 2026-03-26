@@ -41,7 +41,7 @@ describe('Admin Users Management', () => {
       const form = document.querySelector('.v-dialog .v-form');
       if (!form) return;
       const inputs = form.querySelectorAll('input');
-      // Vuetify renders: username input, full_name input, email input, role input (hidden in select), password input
+      // Vuetify renders: username input, full_name input, role input (hidden in select), password input
       // We need to find the actual text inputs (not hidden select ones)
       const textInputs: HTMLInputElement[] = [];
       inputs.forEach((inp) => {
@@ -49,7 +49,7 @@ describe('Admin Users Management', () => {
           textInputs.push(inp);
         }
       });
-      // textInputs: 0=username, 1=full_name, 2=email, 3=password
+      // textInputs: 0=username, 1=full_name, 2=password
       if (textInputs[0]) {
         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
           window.HTMLInputElement.prototype, 'value',
@@ -61,11 +61,8 @@ describe('Admin Users Management', () => {
         nativeInputValueSetter.call(textInputs[1], 'Test Teacher');
         textInputs[1].dispatchEvent(new Event('input', { bubbles: true }));
 
-        nativeInputValueSetter.call(textInputs[2], username + '@school.edu');
+        nativeInputValueSetter.call(textInputs[2], 'Teacher123!');
         textInputs[2].dispatchEvent(new Event('input', { bubbles: true }));
-
-        nativeInputValueSetter.call(textInputs[3], 'Teacher123!');
-        textInputs[3].dispatchEvent(new Event('input', { bubbles: true }));
       }
     }, teacherUsername);
 
@@ -92,7 +89,6 @@ describe('Admin Users Management', () => {
         await createUser({
           username: teacherUsername,
           full_name: 'Test Teacher',
-          email: `${teacherUsername}@school.edu`,
           role: 'teacher',
           password: 'Teacher123!',
         });

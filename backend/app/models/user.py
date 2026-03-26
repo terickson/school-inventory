@@ -10,7 +10,6 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
-    email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     full_name: Mapped[str] = mapped_column(String, nullable=False, default="")
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[str] = mapped_column(String, nullable=False, default="teacher", index=True)

@@ -109,7 +109,7 @@ All list endpoints accept these query parameters:
 
 | Endpoint | Sortable columns |
 |---|---|
-| `/users` | `username`, `full_name`, `email`, `created_at` |
+| `/users` | `username`, `full_name`, `created_at` |
 | `/locators` | `name`, `created_at` |
 | `/categories` | `name`, `created_at` |
 | `/items` | `name`, `created_at` |
@@ -152,7 +152,7 @@ Example: `GET /api/v1/users?sort_by=username&sort_order=desc&limit=10`
 Backend reads from `backend/.env`. Key vars:
 - `DATABASE_URL` — SQLite connection string
 - `SECRET_KEY` — JWT signing key
-- `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` — Initial admin account
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD` — Initial admin account
 - `CORS_ORIGINS` — Allowed frontend origins
 - `UPLOAD_DIR` — Directory for uploaded item images (default: `uploads`)
 - `MAX_IMAGE_SIZE_MB` — Maximum image upload size in MB (default: 5)

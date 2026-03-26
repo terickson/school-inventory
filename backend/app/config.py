@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     admin_username: str = "admin"
-    admin_email: str = "admin@school.edu"
     admin_password: str = "AdminPass123!"
     cors_origins: list[str] = ["http://localhost:5173"]
     environment: str = "development"

@@ -28,7 +28,6 @@ import type { User } from '@/types'
 const adminUser: User = {
   id: 1,
   username: 'admin',
-  email: 'admin@test.com',
   full_name: 'Admin',
   role: 'admin',
   is_active: true,

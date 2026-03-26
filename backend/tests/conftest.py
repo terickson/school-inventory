@@ -58,7 +58,6 @@ def client(db):
 def admin_user(db):
     user = User(
         username="admin",
-        email="admin@test.com",
         full_name="Admin User",
         password_hash=pwd_context.hash("admin123"),
         role="admin",
@@ -74,7 +73,6 @@ def admin_user(db):
 def teacher_user(db):
     user = User(
         username="teacher1",
-        email="teacher1@test.com",
         full_name="Teacher One",
         password_hash=pwd_context.hash("teacher123"),
         role="teacher",

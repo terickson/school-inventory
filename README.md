@@ -459,7 +459,6 @@ This uses the SQLite backup API to create a consistent snapshot of the database,
 | `ACCESS_TOKEN_EXPIRE_MINUTES`| `30`                             | Access token TTL                   |
 | `REFRESH_TOKEN_EXPIRE_DAYS`  | `7`                              | Refresh token TTL                  |
 | `ADMIN_USERNAME`             | `admin`                          | Default admin username             |
-| `ADMIN_EMAIL`                | `admin@school.edu`               | Default admin email                |
 | `ADMIN_PASSWORD`             | `AdminPass123!`                  | Default admin password             |
 | `CORS_ORIGINS`               | `["http://localhost:5173"]`      | Allowed CORS origins               |
 | `ENVIRONMENT`                | `development`                    | `development` or `production`      |

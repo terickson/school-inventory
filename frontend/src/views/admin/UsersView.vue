@@ -166,7 +166,6 @@ let searchTimeout: ReturnType<typeof setTimeout>
 const headers = computed(() => [
   { title: 'Username', key: 'username', sortable: true },
   { title: 'Full Name', key: 'full_name', sortable: true },
-  ...(!isMobile.value ? [{ title: 'Email', key: 'email', sortable: true }] : []),
   { title: 'Role', key: 'role', sortable: false },
   { title: 'Status', key: 'is_active', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },

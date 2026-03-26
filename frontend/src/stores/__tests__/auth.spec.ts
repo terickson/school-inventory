@@ -16,7 +16,6 @@ import { authApi } from '@/api'
 const mockUser: User = {
   id: 1,
   username: 'admin',
-  email: 'admin@test.com',
   full_name: 'Admin User',
   role: 'admin',
   is_active: true,

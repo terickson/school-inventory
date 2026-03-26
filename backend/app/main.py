@@ -73,7 +73,6 @@ _FRIENDLY_NAMES = {
     "items.name": "An item with this name already exists. Please choose a different name.",
     "categories.name": "A category with this name already exists.",
     "users.username": "This username is already taken.",
-    "users.email": "This email address is already in use.",
     "locators.name": "You already have a location with this name.",
     "sublocators.name": "A shelf with this name already exists in this location.",
     "inventory.item_id": "This item already has an inventory record for this location and shelf.",

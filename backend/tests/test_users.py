@@ -2,7 +2,6 @@ class TestUserEndpoints:
     def test_create_user(self, client, admin_headers):
         resp = client.post("/api/v1/users", json={
             "username": "newteacher",
-            "email": "new@test.com",
             "full_name": "New Teacher",
             "password": "pass123",
             "role": "teacher",
@@ -14,22 +13,13 @@ class TestUserEndpoints:
     def test_create_user_duplicate_username(self, client, admin_headers, teacher_user):
         resp = client.post("/api/v1/users", json={
             "username": "teacher1",
-            "email": "different@test.com",
-            "password": "pass123",
-        }, headers=admin_headers)
-        assert resp.status_code == 409
-
-    def test_create_user_duplicate_email(self, client, admin_headers, teacher_user):
-        resp = client.post("/api/v1/users", json={
-            "username": "different",
-            "email": "teacher1@test.com",
             "password": "pass123",
         }, headers=admin_headers)
         assert resp.status_code == 409
 
     def test_create_user_teacher_forbidden(self, client, teacher_headers):
         resp = client.post("/api/v1/users", json={
-            "username": "other", "email": "o@t.com", "password": "p",
+            "username": "other", "password": "p",
         }, headers=teacher_headers)
         assert resp.status_code == 403
 
@@ -116,7 +106,7 @@ class TestUserSorting:
         from passlib.context import CryptContext
         pwd = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
         for name in ["charlie", "alice", "bob"]:
-            db.add(User(username=name, email=f"{name}@test.com", password_hash=pwd.hash("p"), role="teacher"))
+            db.add(User(username=name, password_hash=pwd.hash("p"), role="teacher"))
         db.commit()
         resp = client.get("/api/v1/users?sort_by=username&sort_order=asc", headers=admin_headers)
         assert resp.status_code == 200
@@ -128,24 +118,12 @@ class TestUserSorting:
         from passlib.context import CryptContext
         pwd = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
         for name in ["charlie", "alice", "bob"]:
-            db.add(User(username=name, email=f"{name}@test.com", password_hash=pwd.hash("p"), role="teacher"))
+            db.add(User(username=name, password_hash=pwd.hash("p"), role="teacher"))
         db.commit()
         resp = client.get("/api/v1/users?sort_by=username&sort_order=desc", headers=admin_headers)
         assert resp.status_code == 200
         names = [u["username"] for u in resp.json()["items"]]
         assert names == sorted(names, reverse=True)
-
-    def test_sort_users_by_email(self, client, admin_headers, db):
-        from app.models.user import User
-        from passlib.context import CryptContext
-        pwd = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=4)
-        for name in ["zara", "anna", "mike"]:
-            db.add(User(username=name, email=f"{name}@test.com", password_hash=pwd.hash("p"), role="teacher"))
-        db.commit()
-        resp = client.get("/api/v1/users?sort_by=email&sort_order=asc", headers=admin_headers)
-        assert resp.status_code == 200
-        emails = [u["email"] for u in resp.json()["items"]]
-        assert emails == sorted(emails)
 
     def test_sort_users_invalid_column_ignored(self, client, admin_headers, admin_user):
         resp = client.get("/api/v1/users?sort_by=nonexistent&sort_order=asc", headers=admin_headers)

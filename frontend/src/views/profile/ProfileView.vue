@@ -17,10 +17,6 @@
                 <v-list-item-subtitle>{{ authStore.user?.full_name }}</v-list-item-subtitle>
               </v-list-item>
               <v-list-item>
-                <v-list-item-title>Email</v-list-item-title>
-                <v-list-item-subtitle>{{ authStore.user?.email }}</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
                 <v-list-item-title>Role</v-list-item-title>
                 <v-list-item-subtitle>
                   <v-chip :color="authStore.user?.role === 'admin' ? 'primary' : 'secondary'" size="small" variant="tonal">

@@ -45,7 +45,6 @@ describe('Profile and Logout', () => {
     expect(pageText).toContain('Username');
     expect(pageText).toContain('admin');
     expect(pageText).toContain('Full Name');
-    expect(pageText).toContain('Email');
     expect(pageText).toContain('Role');
   });
 

@@ -15,10 +15,6 @@ def get_user_by_username(db: Session, username: str) -> User | None:
     return db.query(User).filter(User.username == username).first()
 
 
-def get_user_by_email(db: Session, email: str) -> User | None:
-    return db.query(User).filter(User.email == email).first()
-
-
 def get_users(db: Session, skip: int = 0, limit: int = 20, role: str | None = None, is_active: bool | None = None, search: str | None = None, sort_by: str | None = None, sort_order: str = "asc"):
     query = db.query(User)
     if role is not None:
@@ -28,7 +24,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 20, role: str | None = No
     if search:
         pattern = f"%{search}%"
         query = query.filter(
-            User.username.ilike(pattern) | User.full_name.ilike(pattern) | User.email.ilike(pattern)
+            User.username.ilike(pattern) | User.full_name.ilike(pattern)
         )
     total = query.count()
     if sort_by and hasattr(User, sort_by):
@@ -41,7 +37,6 @@ def get_users(db: Session, skip: int = 0, limit: int = 20, role: str | None = No
 def create_user(db: Session, user_in: UserCreate) -> User:
     user = User(
         username=user_in.username,
-        email=user_in.email,
         full_name=user_in.full_name,
         password_hash=pwd_context.hash(user_in.password),
         role=user_in.role,

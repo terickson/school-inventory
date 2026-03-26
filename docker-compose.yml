@@ -13,7 +13,6 @@ services:
       - DATABASE_URL=sqlite:////data/school_inventory.db
       - SECRET_KEY=${SECRET_KEY:-production-secret-change-me-immediately}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@school.edu}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-AdminPass123!}
       - CORS_ORIGINS=["http://localhost","http://localhost:80","http://localhost:8080"]
       - ENVIRONMENT=production

@@ -30,7 +30,7 @@ export const usersApi = {
     await api.post(`/users/${id}/reset-password`, payload)
   },
 
-  async updateMe(payload: Partial<{ email: string; full_name: string }>): Promise<User> {
+  async updateMe(payload: Partial<{ full_name: string }>): Promise<User> {
     const { data } = await api.patch<User>('/users/me', payload)
     return data
   },

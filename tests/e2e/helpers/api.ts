@@ -86,7 +86,6 @@ export async function apiDelete(path: string): Promise<void> {
 export async function createUser(data: {
   username: string;
   full_name: string;
-  email: string;
   role: string;
   password: string;
 }): Promise<any> {

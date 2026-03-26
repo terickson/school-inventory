@@ -1,10 +1,9 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 
 class UserBase(BaseModel):
     username: str
-    email: str
     full_name: str = ""
 
 
@@ -15,21 +14,18 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     full_name: str | None = None
-    email: str | None = None
     role: str | None = None
     is_active: bool | None = None
 
 
 class UserSelfUpdate(BaseModel):
     full_name: str | None = None
-    email: str | None = None
     password: str | None = None
 
 
 class UserResponse(BaseModel):
     id: int
     username: str
-    email: str
     full_name: str
     role: str
     is_active: bool

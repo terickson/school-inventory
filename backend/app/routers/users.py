@@ -41,8 +41,6 @@ def create_user(
 ):
     if user_crud.get_user_by_username(db, user_in.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
-    if user_crud.get_user_by_email(db, user_in.email):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
     return user_crud.create_user(db, user_in)
 
 
@@ -57,9 +55,6 @@ def update_my_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if user_in.email and user_in.email != current_user.email:
-        if user_crud.get_user_by_email(db, user_in.email):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
     return user_crud.update_user_self(db, current_user, user_in)
 
 
@@ -85,9 +80,6 @@ def update_user(
     user = user_crud.get_user(db, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if user_in.email and user_in.email != user.email:
-        if user_crud.get_user_by_email(db, user_in.email):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
     return user_crud.update_user(db, user, user_in)
 
 

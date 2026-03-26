@@ -44,7 +44,7 @@ describe('Users Store', () => {
     vi.mocked(usersApi.create).mockResolvedValue(user as any)
 
     const store = useUsersStore()
-    const result = await store.createUser({ username: 'newuser', email: 'a@b.c', full_name: 'New', password: 'pass123', role: 'teacher' })
+    const result = await store.createUser({ username: 'newuser', full_name: 'New', password: 'pass123', role: 'teacher' })
 
     expect(result).toEqual(user)
   })

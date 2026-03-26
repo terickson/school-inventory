@@ -28,7 +28,6 @@ def seed_admin(db: Session) -> None:
         return
     admin = User(
         username=settings.admin_username,
-        email=settings.admin_email,
         full_name="System Administrator",
         password_hash=pwd_context.hash(settings.admin_password),
         role="admin",

@@ -11,12 +11,6 @@
       label="Full Name"
       :rules="[rules.required]"
     />
-    <v-text-field
-      v-model="form.email"
-      label="Email"
-      type="email"
-      :rules="[rules.required, rules.email]"
-    />
     <v-select
       v-model="form.role"
       :items="['admin', 'teacher']"
@@ -48,14 +42,12 @@ const isEdit = ref(!!props.user)
 const form = reactive({
   username: '',
   full_name: '',
-  email: '',
   role: 'teacher' as UserRole,
   password: '',
 })
 
 const rules = {
   required: (v: string) => !!v || 'Required',
-  email: (v: string) => /.+@.+\..+/.test(v) || 'Invalid email',
   minLength: (v: string) => v.length >= 6 || 'Min 6 characters',
 }
 
@@ -64,13 +56,11 @@ watch(() => props.user, (u) => {
     isEdit.value = true
     form.username = u.username
     form.full_name = u.full_name
-    form.email = u.email
     form.role = u.role
   } else {
     isEdit.value = false
     form.username = ''
     form.full_name = ''
-    form.email = ''
     form.role = 'teacher'
     form.password = ''
   }
@@ -83,12 +73,11 @@ async function validate(): Promise<boolean> {
 
 function getData() {
   if (isEdit.value) {
-    return { full_name: form.full_name, email: form.email, role: form.role }
+    return { full_name: form.full_name, role: form.role }
   }
   return {
     username: form.username,
     full_name: form.full_name,
-    email: form.email,
     role: form.role,
     password: form.password,
   }
@@ -97,7 +86,6 @@ function getData() {
 function reset() {
   form.username = ''
   form.full_name = ''
-  form.email = ''
   form.role = 'teacher'
   form.password = ''
   formRef.value?.resetValidation()
