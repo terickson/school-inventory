@@ -11,11 +11,11 @@ class TestCategoryEndpoints:
         assert resp.status_code == 201
         assert resp.json()["name"] == "New Category"
 
-    def test_create_category_teacher_forbidden(self, client, teacher_headers):
+    def test_create_category_as_teacher(self, client, teacher_headers):
         resp = client.post("/api/v1/categories", json={
-            "name": "Forbidden",
+            "name": "Teacher Created",
         }, headers=teacher_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == 201
 
     def test_create_category_duplicate_name(self, client, admin_headers, category):
         resp = client.post("/api/v1/categories", json={
@@ -58,11 +58,11 @@ class TestCategoryEndpoints:
         }, headers=admin_headers)
         assert resp.status_code == 409
 
-    def test_update_category_teacher_forbidden(self, client, teacher_headers, category):
+    def test_update_category_as_teacher(self, client, teacher_headers, category):
         resp = client.patch(f"/api/v1/categories/{category.id}", json={
-            "name": "Nope",
+            "name": "Teacher Updated",
         }, headers=teacher_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == 200
 
     def test_delete_category(self, client, admin_headers, db):
         from app.models.item import Category
@@ -82,9 +82,14 @@ class TestCategoryEndpoints:
         resp = client.delete("/api/v1/categories/9999", headers=admin_headers)
         assert resp.status_code == 404
 
-    def test_delete_category_teacher_forbidden(self, client, teacher_headers, category):
-        resp = client.delete(f"/api/v1/categories/{category.id}", headers=teacher_headers)
-        assert resp.status_code == 403
+    def test_delete_category_as_teacher(self, client, teacher_headers, db):
+        from app.models.item import Category
+        cat = Category(name="Teacher Deletable")
+        db.add(cat)
+        db.commit()
+        db.refresh(cat)
+        resp = client.delete(f"/api/v1/categories/{cat.id}", headers=teacher_headers)
+        assert resp.status_code == 204
 
     def test_list_categories_search(self, client, admin_headers, category):
         resp = client.get(f"/api/v1/categories?search={category.name}", headers=admin_headers)
@@ -181,11 +186,11 @@ class TestItemEndpoints:
         resp = client.delete(f"/api/v1/items/{item.id}", headers=admin_headers)
         assert resp.status_code == 400
 
-    def test_create_item_teacher_forbidden(self, client, teacher_headers, category):
+    def test_create_item_as_teacher(self, client, teacher_headers, category):
         resp = client.post("/api/v1/items", json={
-            "name": "Bad", "category_id": category.id,
+            "name": "Teacher Item", "category_id": category.id,
         }, headers=teacher_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == 201
 
     def test_teacher_can_list_items(self, client, teacher_headers, item):
         resp = client.get("/api/v1/items", headers=teacher_headers)
@@ -309,14 +314,14 @@ class TestItemImage:
         )
         assert resp.status_code == 404
 
-    def test_upload_image_teacher_forbidden(self, client, teacher_headers, item, tmp_path, monkeypatch):
+    def test_upload_image_as_teacher(self, client, teacher_headers, item, tmp_path, monkeypatch):
         self._setup_upload_dir(tmp_path, monkeypatch)
         resp = client.post(
             f"/api/v1/items/{item.id}/image",
             files={"file": ("test.jpg", self._make_jpeg_bytes(), "image/jpeg")},
             headers=teacher_headers,
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 200
 
     def test_delete_image(self, client, admin_headers, item, tmp_path, monkeypatch):
         upload_dir = self._setup_upload_dir(tmp_path, monkeypatch)

@@ -12,12 +12,10 @@ from app.models.checkout import Inventory
 router = APIRouter(prefix="/locators/{locator_id}/sublocators", tags=["sublocators"])
 
 
-def _get_locator_or_404(db: Session, locator_id: int, current_user: User):
+def _get_locator_or_404(db: Session, locator_id: int):
     locator = locator_crud.get_locator(db, locator_id)
     if not locator:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
-    if current_user.role != "admin" and locator.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     return locator
 
 
@@ -28,7 +26,7 @@ def list_sublocators(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _get_locator_or_404(db, locator_id, current_user)
+    _get_locator_or_404(db, locator_id)
     total, sublocators = locator_crud.get_sublocators(
         db, locator_id=locator_id, skip=pagination["skip"], limit=pagination["limit"],
     )
@@ -47,7 +45,7 @@ def create_sublocator(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _get_locator_or_404(db, locator_id, current_user)
+    _get_locator_or_404(db, locator_id)
     if locator_crud.get_sublocator_by_name(db, locator_id, sub_in.name):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -63,7 +61,7 @@ def get_sublocator(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _get_locator_or_404(db, locator_id, current_user)
+    _get_locator_or_404(db, locator_id)
     sub = locator_crud.get_sublocator(db, sublocator_id)
     if not sub or sub.locator_id != locator_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sublocator not found")
@@ -78,7 +76,7 @@ def update_sublocator(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _get_locator_or_404(db, locator_id, current_user)
+    _get_locator_or_404(db, locator_id)
     sub = locator_crud.get_sublocator(db, sublocator_id)
     if not sub or sub.locator_id != locator_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sublocator not found")
@@ -99,7 +97,7 @@ def delete_sublocator(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _get_locator_or_404(db, locator_id, current_user)
+    _get_locator_or_404(db, locator_id)
     sub = locator_crud.get_sublocator(db, sublocator_id)
     if not sub or sub.locator_id != locator_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sublocator not found")

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A web-based inventory management system for schools. Teachers track supplies in physical storage locations (locators/sublocators), manage an item catalog, and check out items. Two roles: Admin (manages users, full access) and Teacher (manages own locations and checkouts).
+A web-based inventory management system for schools. Teachers track supplies in physical storage locations (locators/sublocators), manage an item catalog, and check out items. Two roles: Admin (full access including user management) and Teacher (full access except user management).
 
 ## Architecture
 
@@ -87,12 +87,12 @@ All endpoints under `/api/v1/`. Swagger docs at `/docs`. Key endpoint groups:
 - `/users/` — Admin user management
 - `/locators/` — Storage locations (closets)
 - `/locators/{id}/sublocators/` — Shelves within locations
-- `/categories/` — Category management (list, create, get, update, delete; admin-only for mutations)
-- `/items/` — Item catalog, plus `POST /items/{id}/image` and `DELETE /items/{id}/image` for image management
+- `/categories/` — Category management (list, create, get, update, delete)
+- `/items/` — Item catalog (CRUD for all authenticated users), plus `POST /items/{id}/image` and `DELETE /items/{id}/image` for image management
 - `/uploads/` — Static file serving for uploaded item images
 - `/inventory/` — Stock levels per location
 - `/checkouts/` — Checkout, return, summary
-- `/admin/backup` — Download SQLite database backup (admin only)
+- `/admin/backup` — Download SQLite database backup (any authenticated user)
 
 ### Pagination & Sorting
 
@@ -126,10 +126,11 @@ Example: `GET /api/v1/users?sort_by=username&sort_order=desc&limit=10`
 - All API responses are paginated: `{ total, skip, limit, items: [...] }` with optional server-side sorting via `sort_by` and `sort_order` query params
 - JWT auth: access tokens (30min) + refresh tokens (7 days), both with `type` claim
 - Checkout and return operations are **atomic** (inventory quantity updated in same transaction). Partial returns are supported — returning fewer items than checked out keeps the checkout active until all items are returned.
-- Users are **soft-deleted** (is_active=false), never hard-deleted
+- Users are **soft-deleted** (is_active=false), never hard-deleted. User management (create, update, delete, reset-password) is admin-only; read access (list, get) is available to all authenticated users
 - Frontend uses `<script setup lang="ts">` everywhere (Vue 3 Composition API)
 - All interactive elements have `data-testid` attributes for E2E testing
 - UI uses "Storage Location"/"Location" and "Shelf" in user-facing text, not "Locator"/"Sublocator"
+- Only the Users page and navigation item are admin-only in the UI; all other pages and actions are available to all authenticated users
 - Mobile responsive: views use `useBreakpoint()` composable and computed headers to hide non-essential table columns, stack toolbar filters, and swap icon buttons for action menus on small screens
 
 ## Domain Terminology

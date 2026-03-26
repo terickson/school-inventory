@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.crud import item as item_crud
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import get_current_user
 from app.dependencies.pagination import pagination_params
 from app.schemas.item import (
     CategoryCreate, CategoryUpdate, CategoryResponse,
@@ -52,11 +52,11 @@ def list_categories(
     response_model=CategoryResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a category",
-    description="Create a new item category. Admin only. Category names must be unique.",
+    description="Create a new item category. Category names must be unique.",
 )
 def create_category(
     cat_in: CategoryCreate,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if item_crud.get_category_by_name(db, cat_in.name):
@@ -85,12 +85,12 @@ def get_category(
     "/categories/{category_id}",
     response_model=CategoryResponse,
     summary="Update a category",
-    description="Update a category's name or description. Admin only. Category names must be unique.",
+    description="Update a category's name or description. Category names must be unique.",
 )
 def update_category(
     category_id: int,
     cat_in: CategoryUpdate,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     category = item_crud.get_category(db, category_id)
@@ -107,11 +107,11 @@ def update_category(
     "/categories/{category_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a category",
-    description="Delete a category. Admin only. Cannot delete a category that has items assigned to it.",
+    description="Delete a category. Cannot delete a category that has items assigned to it.",
 )
 def delete_category(
     category_id: int,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     category = item_crud.get_category(db, category_id)
@@ -168,11 +168,11 @@ def list_items(
     response_model=ItemResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create an item",
-    description="Create a new catalog item. Admin only. Requires a valid category_id.",
+    description="Create a new catalog item. Requires a valid category_id.",
 )
 def create_item(
     item_in: ItemCreate,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     cat = item_crud.get_category(db, item_in.category_id)
@@ -207,12 +207,12 @@ def get_item(
     "/items/{item_id}",
     response_model=ItemResponse,
     summary="Update an item",
-    description="Update a catalog item's name, description, category, or unit. Admin only.",
+    description="Update a catalog item's name, description, category, or unit.",
 )
 def update_item(
     item_id: int,
     item_in: ItemUpdate,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     item = item_crud.get_item(db, item_id)
@@ -232,11 +232,11 @@ def update_item(
     "/items/{item_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an item",
-    description="Delete a catalog item. Admin only. Cannot delete items with existing inventory records.",
+    description="Delete a catalog item. Cannot delete items with existing inventory records.",
 )
 def delete_item(
     item_id: int,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     item = item_crud.get_item(db, item_id)
@@ -263,12 +263,12 @@ def delete_item(
     "/items/{item_id}/image",
     response_model=ItemResponse,
     summary="Upload item image",
-    description="Upload or replace the image for a catalog item. Accepts JPEG, PNG, or WebP up to 5 MB. Admin only.",
+    description="Upload or replace the image for a catalog item. Accepts JPEG, PNG, or WebP up to 5 MB.",
 )
 def upload_item_image(
     item_id: int,
     file: UploadFile,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     item = item_crud.get_item(db, item_id)
@@ -319,11 +319,11 @@ def upload_item_image(
     "/items/{item_id}/image",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete item image",
-    description="Remove the image from a catalog item. Admin only.",
+    description="Remove the image from a catalog item.",
 )
 def delete_item_image(
     item_id: int,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     item = item_crud.get_item(db, item_id)

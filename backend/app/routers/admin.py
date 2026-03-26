@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies.auth import require_admin
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 @router.get(
     "/backup",
     summary="Download database backup",
-    description="Downloads a copy of the SQLite database file. Uses the SQLite backup API to create a consistent snapshot. Admin only.",
+    description="Downloads a copy of the SQLite database file. Uses the SQLite backup API to create a consistent snapshot.",
     responses={
         200: {
             "description": "SQLite database file",
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 )
 def download_backup(
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(get_current_user),
 ):
     # Create temp file for backup
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".db")

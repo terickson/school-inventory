@@ -14,12 +14,6 @@ from app.models.checkout import Checkout
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
 
-def _check_inventory_access(db: Session, inv, current_user: User):
-    locator = locator_crud.get_locator(db, inv.locator_id)
-    if current_user.role != "admin" and locator and locator.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-
-
 @router.get("", response_model=dict)
 def list_inventory(
     pagination: dict = Depends(pagination_params),
@@ -54,8 +48,6 @@ def create_inventory(
     locator = locator_crud.get_locator(db, inv_in.locator_id)
     if not locator:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
-    if current_user.role != "admin" and locator.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     # Verify item exists
     item = item_crud.get_item(db, inv_in.item_id)
     if not item:
@@ -82,7 +74,6 @@ def get_inventory(
     inv = checkout_crud.get_inventory(db, inventory_id)
     if not inv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inventory record not found")
-    _check_inventory_access(db, inv, current_user)
     return inv
 
 
@@ -96,7 +87,6 @@ def update_inventory(
     inv = checkout_crud.get_inventory(db, inventory_id)
     if not inv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inventory record not found")
-    _check_inventory_access(db, inv, current_user)
     return checkout_crud.update_inventory(db, inv, inv_in)
 
 
@@ -109,7 +99,6 @@ def delete_inventory(
     inv = checkout_crud.get_inventory(db, inventory_id)
     if not inv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inventory record not found")
-    _check_inventory_access(db, inv, current_user)
     # Check for open checkouts
     open_checkouts = db.query(Checkout).filter(
         Checkout.inventory_id == inventory_id,
@@ -133,7 +122,6 @@ def adjust_inventory(
     inv = checkout_crud.get_inventory(db, inventory_id)
     if not inv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inventory record not found")
-    _check_inventory_access(db, inv, current_user)
     try:
         return checkout_crud.adjust_inventory(db, inv, adj, current_user.id)
     except ValueError as e:

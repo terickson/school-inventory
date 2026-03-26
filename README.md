@@ -1,6 +1,6 @@
 # School Supply Inventory Management System
 
-A web-based inventory management system for tracking school supplies across physical storage locations. Teachers can browse items, perform self-service checkouts and returns, while admins manage the entire catalog, locations, users, and oversight of all checkouts.
+A web-based inventory management system for tracking school supplies across physical storage locations. Both admins and teachers have full access to manage the catalog, locations, inventory, and checkouts. Only admins can manage user accounts.
 
 ## Features
 
@@ -22,17 +22,16 @@ The system uses **role-based access control (RBAC)** with two roles and resource
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        ADMINISTRATOR                                │
 │                                                                     │
-│  Full system access. Manages users, catalog, categories,            │
-│  all locations, all inventory, all checkouts. Can download           │
-│  database backups.                                                  │
+│  Full system access including user management. Manages              │
+│  users, catalog, categories, all locations, all inventory,          │
+│  all checkouts. Can download database backups.                      │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                          TEACHER                                    │
 │                                                                     │
-│  Manages own storage locations and shelves. Can browse               │
-│  the full catalog and create checkouts for themselves.              │
-│  Can view and return their own checkouts, or checkouts              │
-│  from locations they own.                                           │
+│  Full system access except user management. Can manage              │
+│  catalog, categories, all locations, all inventory, all             │
+│  checkouts, and download database backups.                          │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                       UNAUTHENTICATED                               │
@@ -57,9 +56,9 @@ Legend:  ● = full access    ◐ = own resources only    ○ = no access
 │  GET  /auth/me                   │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ USERS                            │           │           │
-│  GET    /users                   │     ●     │     ○     │
+│  GET    /users                   │     ●     │     ●     │
 │  POST   /users                   │     ●     │     ○     │
-│  GET    /users/{id}              │     ●     │     ○     │
+│  GET    /users/{id}              │     ●     │     ●     │
 │  PATCH  /users/{id}              │     ●     │     ○     │
 │  DELETE /users/{id}              │     ●     │     ○     │
 │  POST   /users/{id}/reset-pwd    │     ●     │     ○     │
@@ -68,57 +67,54 @@ Legend:  ● = full access    ◐ = own resources only    ○ = no access
 ├──────────────────────────────────┼───────────┼───────────┤
 │ CATEGORIES                       │           │           │
 │  GET    /categories              │     ●     │     ●     │
-│  POST   /categories              │     ●     │     ○     │
+│  POST   /categories              │     ●     │     ●     │
 │  GET    /categories/{id}         │     ●     │     ●     │
-│  PATCH  /categories/{id}         │     ●     │     ○     │
-│  DELETE /categories/{id}         │     ●     │     ○     │
+│  PATCH  /categories/{id}         │     ●     │     ●     │
+│  DELETE /categories/{id}         │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ ITEMS (Catalog)                  │           │           │
 │  GET    /items                   │     ●     │     ●     │
-│  POST   /items                   │     ●     │     ○     │
+│  POST   /items                   │     ●     │     ●     │
 │  GET    /items/{id}              │     ●     │     ●     │
-│  PATCH  /items/{id}              │     ●     │     ○     │
-│  DELETE /items/{id}              │     ●     │     ○     │
-│  POST   /items/{id}/image        │     ●     │     ○     │
-│  DELETE /items/{id}/image        │     ●     │     ○     │
+│  PATCH  /items/{id}              │     ●     │     ●     │
+│  DELETE /items/{id}              │     ●     │     ●     │
+│  POST   /items/{id}/image        │     ●     │     ●     │
+│  DELETE /items/{id}/image        │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ LOCATIONS                        │           │           │
-│  GET    /locators                │     ●     │  ◐ own    │
+│  GET    /locators                │     ●     │     ●     │
 │  POST   /locators                │     ●     │     ●     │
-│  GET    /locators/{id}           │     ●     │  ◐ own    │
-│  PATCH  /locators/{id}           │     ●     │  ◐ own    │
-│  DELETE /locators/{id}           │     ●     │     ○     │
+│  GET    /locators/{id}           │     ●     │     ●     │
+│  PATCH  /locators/{id}           │     ●     │     ●     │
+│  DELETE /locators/{id}           │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ SHELVES                          │           │           │
-│  GET    /locators/{id}/sublocs   │     ●     │  ◐ own    │
-│  POST   /locators/{id}/sublocs   │     ●     │  ◐ own    │
-│  PATCH  .../sublocs/{id}         │     ●     │  ◐ own    │
-│  DELETE .../sublocs/{id}         │     ●     │  ◐ own    │
+│  GET    /locators/{id}/sublocs   │     ●     │     ●     │
+│  POST   /locators/{id}/sublocs   │     ●     │     ●     │
+│  PATCH  .../sublocs/{id}         │     ●     │     ●     │
+│  DELETE .../sublocs/{id}         │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ INVENTORY                        │           │           │
 │  GET    /inventory               │     ●     │     ●     │
-│  POST   /inventory               │     ●     │  ◐ own    │
-│  GET    /inventory/{id}          │     ●     │  ◐ own    │
-│  PATCH  /inventory/{id}          │     ●     │  ◐ own    │
-│  DELETE /inventory/{id}          │     ●     │  ◐ own    │
-│  POST   /inventory/{id}/adjust   │     ●     │  ◐ own    │
+│  POST   /inventory               │     ●     │     ●     │
+│  GET    /inventory/{id}          │     ●     │     ●     │
+│  PATCH  /inventory/{id}          │     ●     │     ●     │
+│  DELETE /inventory/{id}          │     ●     │     ●     │
+│  POST   /inventory/{id}/adjust   │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ CHECKOUTS                        │           │           │
-│  GET    /checkouts               │     ●     │  ◐ own    │
-│  POST   /checkouts               │     ●     │  ◐ self   │
-│  GET    /checkouts/{id}          │     ●     │  ◐ own¹   │
-│  POST   /checkouts/{id}/return   │     ●     │  ◐ own¹   │
-│  GET    /checkouts/summary       │     ●     │  ◐ own    │
+│  GET    /checkouts               │     ●     │     ●     │
+│  POST   /checkouts               │     ●     │     ●     │
+│  GET    /checkouts/{id}          │     ●     │     ●     │
+│  POST   /checkouts/{id}/return   │     ●     │     ●     │
+│  GET    /checkouts/summary       │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ ADMIN                            │           │           │
-│  GET    /admin/backup            │     ●     │     ○     │
+│  GET    /admin/backup            │     ●     │     ●     │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ UPLOADS                          │           │           │
 │  GET    /uploads/{filename}      │     ●     │     ●     │
 └──────────────────────────────────┴───────────┴───────────┘
-
-¹ Teachers can access checkouts they created OR checkouts
-  from inventory in locations they own.
 ```
 
 ### UI Visibility by Role
@@ -131,45 +127,33 @@ Legend:  ● = full access    ◐ = own resources only    ○ = no access
 │  Dashboard                       │  visible  │  visible  │
 │  Locations                       │  visible  │  visible  │
 │  Catalog                         │  visible  │  visible  │
-│  Categories                      │  visible  │  hidden   │
+│  Categories                      │  visible  │  visible  │
 │  Inventory                       │  visible  │  visible  │
 │  Checkouts                       │  visible  │  visible  │
 │  Users                           │  visible  │  hidden   │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ PAGES (route-level access)       │           │           │
 │  /users                          │  allowed  │  blocked  │
-│  /categories                     │  allowed  │  blocked  │
 │  All other pages                 │  allowed  │  allowed  │
 ├──────────────────────────────────┼───────────┼───────────┤
 │ ACTION BUTTONS                   │           │           │
-│  Add Item (catalog)              │  visible  │  hidden   │
-│  Edit/Delete Item (catalog)      │  visible  │  hidden   │
-│  Upload/Remove Item Image        │  visible  │  hidden   │
-│  Add Category                    │  visible  │  hidden   │
-│  Edit/Delete Category            │  visible  │  hidden   │
-│  Add Stock (inventory)           │  visible  │  hidden   │
-│  Checkout on behalf of others    │  visible  │  hidden   │
+│  Add Item (catalog)              │  visible  │  visible  │
+│  Edit/Delete Item (catalog)      │  visible  │  visible  │
+│  Upload/Remove Item Image        │  visible  │  visible  │
+│  Add Category                    │  visible  │  visible  │
+│  Edit/Delete Category            │  visible  │  visible  │
+│  Add Stock (inventory)           │  visible  │  visible  │
+│  Checkout on behalf of others    │  visible  │  visible  │
 │  New Checkout (for self)         │  visible  │  visible  │
 │  Return Items                    │  visible  │  visible  │
 └──────────────────────────────────┴───────────┴───────────┘
 ```
 
-### Ownership Model
+### Access Model
 
-Teachers have a **resource ownership** model for storage locations:
+Both admins and teachers have full access to all resources (locations, inventory, checkouts, catalog, categories, backups). The only difference is that **user management** (creating, editing, deleting, and resetting passwords for user accounts) is restricted to admins.
 
-```
-Teacher creates a Location (closet)
-        │
-        ├── Teacher owns all Shelves within it
-        ├── Teacher can manage Inventory in those shelves
-        └── Teacher can view/return Checkouts from those locations
-```
-
-- When a teacher creates a location, they become its owner
-- Ownership grants access to all nested resources (shelves, inventory)
-- Teachers can see and return checkouts from locations they own, even if another user initiated the checkout
-- Admins bypass all ownership checks and can access everything
+When a teacher creates a location, they are recorded as the owner (`user_id`), but this does not restrict access — all authenticated users can view and manage all locations and their nested resources.
 
 ## Architecture
 
@@ -433,7 +417,7 @@ When running in development mode, interactive API docs are available at:
 
 ### Database Backup
 
-Admins can download a complete backup of the SQLite database.
+Any authenticated user can download a complete backup of the SQLite database.
 
 First, obtain an admin access token by logging in:
 
@@ -463,7 +447,7 @@ TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/token \
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/admin/backup -o school_inventory_backup.db
 ```
 
-This uses the SQLite backup API to create a consistent snapshot of the database, including any in-flight WAL data. Only admin users can access this endpoint.
+This uses the SQLite backup API to create a consistent snapshot of the database, including any in-flight WAL data. Any authenticated user can access this endpoint.
 
 ## Environment Variables
 
@@ -577,8 +561,8 @@ school-inventory/
 ### Teacher Workflow
 
 1. Log in with teacher credentials
-2. Browse **Catalog** or **Inventory** to find items
-3. Navigate to **Checkouts** to borrow items
+2. Manage **Locations**, **Catalog**, **Categories**, and **Inventory** as needed
+3. Navigate to **Checkouts** to borrow items (can check out on behalf of others)
 4. Return items when done via the **Checkouts** page
 
 ### Checkout Process

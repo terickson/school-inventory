@@ -126,7 +126,7 @@ describe('Router navigation guards', () => {
     expect(router.currentRoute.value.name).toBe('users')
   })
 
-  it('redirects non-admin from /categories to dashboard', async () => {
+  it('allows non-admin to access /categories', async () => {
     vi.mocked(authApi.me).mockResolvedValue(teacherUser)
 
     const store = useAuthStore()
@@ -135,7 +135,7 @@ describe('Router navigation guards', () => {
     router.push('/categories')
     await router.isReady()
 
-    expect(router.currentRoute.value.name).toBe('dashboard')
+    expect(router.currentRoute.value.name).toBe('categories')
   })
 
   it('redirects unknown routes to /', async () => {

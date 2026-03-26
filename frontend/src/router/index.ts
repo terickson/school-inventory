@@ -45,7 +45,7 @@ const router = createRouter({
       path: '/categories',
       name: 'categories',
       component: () => import('@/views/catalog/CategoriesView.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true },
+      meta: { requiresAuth: true },
     },
     {
       path: '/inventory',

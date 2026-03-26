@@ -40,7 +40,6 @@
           data-testid="nav-locators"
         />
         <v-list-item
-          v-if="authStore.isAdmin"
           prepend-icon="mdi-shape"
           title="Categories"
           :to="{ name: 'categories' }"

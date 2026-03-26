@@ -16,12 +16,11 @@
       :rules="[rules.required, rules.positiveNumber]"
     />
     <v-select
-      v-if="isAdmin"
       v-model="form.user_id"
       :items="users"
       item-title="full_name"
       item-value="id"
-      label="Borrower (optional, admin)"
+      label="Borrower (optional)"
       clearable
     />
     <v-textarea
@@ -40,14 +39,11 @@ import type { InventoryRecord } from '@/types'
 import type { User } from '@/types'
 import { useInventoryStore } from '@/stores/inventory'
 import { useUsersStore } from '@/stores/users'
-import { useAuthStore } from '@/stores/auth'
 
 const inventoryStore = useInventoryStore()
 const usersStore = useUsersStore()
-const authStore = useAuthStore()
 
 const formRef = ref<VForm>()
-const isAdmin = computed(() => authStore.isAdmin)
 
 const form = reactive({
   inventory_id: null as number | null,
@@ -74,7 +70,7 @@ onMounted(async () => {
   if (inventoryStore.records.length === 0) {
     await inventoryStore.fetchRecords({ limit: 100 })
   }
-  if (isAdmin.value && usersStore.users.length === 0) {
+  if (usersStore.users.length === 0) {
     await usersStore.fetchUsers({ limit: 100 })
   }
 })

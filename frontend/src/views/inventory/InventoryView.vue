@@ -2,7 +2,7 @@
   <div>
     <PageHeader title="Inventory" subtitle="Track stock levels across locations">
       <template #actions>
-        <v-btn v-if="authStore.isAdmin" color="primary" data-testid="add-inventory-btn" @click="openCreate">
+        <v-btn color="primary" data-testid="add-inventory-btn" @click="openCreate">
           <v-icon start>mdi-plus</v-icon>
           Add Stock
         </v-btn>
@@ -142,7 +142,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { useInventoryStore } from '@/stores/inventory'
 import { useLocatorsStore } from '@/stores/locators'
 import { useCatalogStore } from '@/stores/catalog'
@@ -153,7 +152,6 @@ import FormDialog from '@/components/common/FormDialog.vue'
 import StockLevelBadge from '@/components/inventory/StockLevelBadge.vue'
 import InventoryAdjustForm from '@/components/inventory/InventoryAdjustForm.vue'
 
-const authStore = useAuthStore()
 const inventoryStore = useInventoryStore()
 const locatorsStore = useLocatorsStore()
 const catalogStore = useCatalogStore()

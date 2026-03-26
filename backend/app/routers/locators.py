@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.crud import locator as locator_crud
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import get_current_user
 from app.dependencies.pagination import pagination_params
 from app.schemas.locator import LocatorCreate, LocatorUpdate, LocatorResponse
 from app.models.user import User
@@ -12,20 +12,14 @@ from app.models.checkout import Inventory
 router = APIRouter(prefix="/locators", tags=["locators"])
 
 
-def _check_locator_access(locator, current_user: User):
-    if current_user.role != "admin" and locator.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-
-
 @router.get("", response_model=dict)
 def list_locators(
     pagination: dict = Depends(pagination_params),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user_id = None if current_user.role == "admin" else current_user.id
     total, locators = locator_crud.get_locators(
-        db, skip=pagination["skip"], limit=pagination["limit"], user_id=user_id,
+        db, skip=pagination["skip"], limit=pagination["limit"], user_id=None,
         sort_by=pagination["sort_by"], sort_order=pagination["sort_order"],
     )
     return {
@@ -59,7 +53,6 @@ def get_locator(
     locator = locator_crud.get_locator(db, locator_id)
     if not locator:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
-    _check_locator_access(locator, current_user)
     return locator
 
 
@@ -73,7 +66,6 @@ def update_locator(
     locator = locator_crud.get_locator(db, locator_id)
     if not locator:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locator not found")
-    _check_locator_access(locator, current_user)
     if locator_in.name and locator_in.name != locator.name:
         existing = locator_crud.get_locator_by_name(db, locator.user_id, locator_in.name)
         if existing:
@@ -87,7 +79,7 @@ def update_locator(
 @router.delete("/{locator_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_locator(
     locator_id: int,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     locator = locator_crud.get_locator(db, locator_id)

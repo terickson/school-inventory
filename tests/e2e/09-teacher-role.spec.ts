@@ -50,9 +50,9 @@ describe('Teacher Role Restrictions', () => {
     expect(usersNav).toBeNull();
   });
 
-  test('Categories nav item is not visible for teachers', async () => {
+  test('Categories nav item is visible for teachers', async () => {
     const categoriesNav = await page.$('[data-testid="nav-categories"]');
-    expect(categoriesNav).toBeNull();
+    expect(categoriesNav).not.toBeNull();
   });
 
   test('Teacher can access Catalog page', async () => {
@@ -62,9 +62,9 @@ describe('Teacher Role Restrictions', () => {
     expect(table).not.toBeNull();
   });
 
-  test('Add Item button is not visible for teachers', async () => {
+  test('Add Item button is visible for teachers', async () => {
     const addBtn = await page.$('[data-testid="add-item-btn"]');
-    expect(addBtn).toBeNull();
+    expect(addBtn).not.toBeNull();
   });
 
   test('Teacher can access Inventory page', async () => {
@@ -74,9 +74,9 @@ describe('Teacher Role Restrictions', () => {
     expect(table).not.toBeNull();
   });
 
-  test('Add Stock button is not visible for teachers', async () => {
+  test('Add Stock button is visible for teachers', async () => {
     const addBtn = await page.$('[data-testid="add-inventory-btn"]');
-    expect(addBtn).toBeNull();
+    expect(addBtn).not.toBeNull();
   });
 
   test('Teacher can access Checkouts page', async () => {
@@ -93,9 +93,9 @@ describe('Teacher Role Restrictions', () => {
     expect(page.url()).not.toContain('/users');
   });
 
-  test('Teacher is blocked from /categories via URL', async () => {
+  test('Teacher can access /categories via URL', async () => {
     await page.goto(`${BASE_URL}/categories`, { waitUntil: 'load' });
-    await new Promise((r) => setTimeout(r, 2000));
-    expect(page.url()).not.toContain('/categories');
+    await page.waitForSelector('[data-testid="categories-table"]', { timeout: 15000 });
+    expect(page.url()).toContain('/categories');
   });
 });

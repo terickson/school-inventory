@@ -38,13 +38,14 @@ class TestCheckoutEndpoints:
         assert resp.status_code == 201
         assert resp.json()["user_id"] == teacher_user.id
 
-    def test_teacher_cannot_checkout_for_others(self, client, teacher_headers, admin_user, inventory_record):
+    def test_teacher_can_checkout_for_others(self, client, teacher_headers, admin_user, inventory_record):
         resp = client.post("/api/v1/checkouts", json={
             "inventory_id": inventory_record.id,
             "quantity": 1,
             "user_id": admin_user.id,
         }, headers=teacher_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == 201
+        assert resp.json()["user_id"] == admin_user.id
 
     def test_list_checkouts(self, client, admin_headers, admin_user, inventory_record, db):
         co = Checkout(

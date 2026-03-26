@@ -17,7 +17,7 @@ def list_users(
     role: str | None = None,
     is_active: bool | None = None,
     search: str | None = None,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     total, users = user_crud.get_users(
@@ -66,7 +66,7 @@ def update_my_profile(
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     user = user_crud.get_user(db, user_id)

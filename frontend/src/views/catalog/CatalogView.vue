@@ -2,7 +2,7 @@
   <div>
     <PageHeader title="Item Catalog" subtitle="Browse and manage items">
       <template #actions>
-        <v-btn v-if="authStore.isAdmin" color="primary" data-testid="add-item-btn" @click="openCreate">
+        <v-btn color="primary" data-testid="add-item-btn" @click="openCreate">
           <v-icon start>mdi-plus</v-icon>
           Add Item
         </v-btn>
@@ -70,27 +70,25 @@
         </template>
 
         <template #item.actions="{ item }">
-          <template v-if="authStore.isAdmin">
-            <template v-if="!isMobile">
-              <v-btn icon size="small" variant="text" @click="openEdit(item)">
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn icon size="small" variant="text" color="error" @click="handleDelete(item)">
-                <v-icon>mdi-delete</v-icon>
+          <template v-if="!isMobile">
+            <v-btn icon size="small" variant="text" @click="openEdit(item)">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn icon size="small" variant="text" color="error" @click="handleDelete(item)">
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </template>
+          <v-menu v-else>
+            <template #activator="{ props }">
+              <v-btn icon size="small" variant="text" v-bind="props">
+                <v-icon>mdi-dots-vertical</v-icon>
               </v-btn>
             </template>
-            <v-menu v-else>
-              <template #activator="{ props }">
-                <v-btn icon size="small" variant="text" v-bind="props">
-                  <v-icon>mdi-dots-vertical</v-icon>
-                </v-btn>
-              </template>
-              <v-list density="compact">
-                <v-list-item prepend-icon="mdi-pencil" title="Edit" @click="openEdit(item)" />
-                <v-list-item prepend-icon="mdi-delete" title="Delete" class="text-error" @click="handleDelete(item)" />
-              </v-list>
-            </v-menu>
-          </template>
+            <v-list density="compact">
+              <v-list-item prepend-icon="mdi-pencil" title="Edit" @click="openEdit(item)" />
+              <v-list-item prepend-icon="mdi-delete" title="Delete" class="text-error" @click="handleDelete(item)" />
+            </v-list>
+          </v-menu>
         </template>
       </v-data-table-server>
     </v-card>
@@ -124,7 +122,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { useCatalogStore } from '@/stores/catalog'
 import { useConfirm, useNotify, useBreakpoint } from '@/composables'
 import type { Item } from '@/types'
@@ -132,7 +129,6 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import FormDialog from '@/components/common/FormDialog.vue'
 import ItemForm from '@/components/catalog/ItemForm.vue'
 
-const authStore = useAuthStore()
 const catalogStore = useCatalogStore()
 const { confirm } = useConfirm()
 const notify = useNotify()

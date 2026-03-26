@@ -19,20 +19,20 @@ class TestLocatorEndpoints:
         assert resp.status_code == 200
         assert resp.json()["total"] >= 1
 
-    def test_list_locators_teacher_only_own(self, client, teacher_headers, locator):
-        # Teacher should not see admin's locators
+    def test_list_locators_teacher_sees_all(self, client, teacher_headers, locator):
+        # Teacher should see all locators including admin's
         resp = client.get("/api/v1/locators", headers=teacher_headers)
         assert resp.status_code == 200
-        assert resp.json()["total"] == 0
+        assert resp.json()["total"] >= 1
 
     def test_get_locator(self, client, admin_headers, locator):
         resp = client.get(f"/api/v1/locators/{locator.id}", headers=admin_headers)
         assert resp.status_code == 200
         assert resp.json()["id"] == locator.id
 
-    def test_get_locator_forbidden(self, client, teacher_headers, locator):
+    def test_get_locator_as_teacher(self, client, teacher_headers, locator):
         resp = client.get(f"/api/v1/locators/{locator.id}", headers=teacher_headers)
-        assert resp.status_code == 403
+        assert resp.status_code == 200
 
     def test_update_locator(self, client, admin_headers, locator):
         resp = client.patch(f"/api/v1/locators/{locator.id}", json={
@@ -62,9 +62,14 @@ class TestLocatorEndpoints:
         resp = client.delete(f"/api/v1/locators/{inventory_record.locator_id}", headers=admin_headers)
         assert resp.status_code == 400
 
-    def test_delete_locator_teacher_forbidden(self, client, teacher_headers, locator):
-        resp = client.delete(f"/api/v1/locators/{locator.id}", headers=teacher_headers)
-        assert resp.status_code == 403
+    def test_delete_locator_as_teacher(self, client, teacher_headers, admin_user, db):
+        from app.models.locator import Locator
+        loc = Locator(name="Teacher Deletable", user_id=admin_user.id)
+        db.add(loc)
+        db.commit()
+        db.refresh(loc)
+        resp = client.delete(f"/api/v1/locators/{loc.id}", headers=teacher_headers)
+        assert resp.status_code == 204
 
 
 class TestSublocatorEndpoints:
