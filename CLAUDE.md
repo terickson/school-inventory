@@ -28,10 +28,10 @@ backend/
     database.py      # SQLAlchemy engine, session, PRAGMA listener
     models/          # SQLAlchemy ORM models (user, item, locator, checkout)
     schemas/         # Pydantic request/response schemas
-    routers/         # FastAPI route handlers (auth, users, locators, sublocators, items, inventory, checkouts, admin)
+    routers/         # FastAPI route handlers (auth, users, locators, sublocators, items, inventory, checkouts, admin, csv_io)
     crud/            # Database query functions
     dependencies/    # auth (JWT, get_current_user, require_admin), pagination
-    utils/seed.py    # Idempotent admin user + category seeding
+    utils/seed.py    # Idempotent admin user + physics catalog seeding
   tests/             # pytest tests
   alembic/           # Database migrations
   requirements.txt
@@ -46,7 +46,7 @@ frontend/
     router/          # Vue Router with auth guards
     stores/          # Pinia stores (auth, users, locators, catalog, inventory, checkout)
     types/           # TypeScript interfaces
-    views/           # Page-level components
+    views/           # Page-level components (includes inventory/StockShelfView.vue for rapid entry)
 
 tests/e2e/           # Puppeteer E2E tests
 scripts/reset_db.sh  # Database reset for testing
@@ -90,7 +90,10 @@ All endpoints under `/api/v1/`. Swagger docs at `/docs`. Key endpoint groups:
 - `/categories/` — Category management (list, create, get, update, delete)
 - `/items/` — Item catalog (CRUD for all authenticated users), plus `POST /items/{id}/image` and `DELETE /items/{id}/image` for image management
 - `/uploads/` — Static file serving for uploaded item images
-- `/inventory/` — Stock levels per location
+- `/inventory/` — Stock levels per location, plus:
+  - `POST /inventory/quick-add` — Combined item creation + inventory upsert for rapid entry (Stock a Shelf)
+  - `GET /inventory/export?locator_id=X&sublocator_id=Y` — CSV export of inventory for a location
+  - `POST /inventory/import` — CSV bulk import of inventory for a location (multipart form: file + locator_id)
 - `/checkouts/` — Checkout, return, summary
 - `/admin/backup` — Download SQLite database backup (any authenticated user)
 
@@ -142,6 +145,7 @@ Example: `GET /api/v1/users?sort_by=username&sort_order=desc&limit=10`
 | Borrowing items | Checkout | Checkout |
 | System manager | admin (role) | Administrator |
 | Item borrower | teacher (role) | Teacher |
+| Rapid inventory entry | quick-add / stock-shelf | Stock a Shelf |
 
 ## Default Credentials
 
@@ -161,6 +165,19 @@ Frontend uses `VITE_API_BASE_URL` (default: `/api/v1`).
 
 ## Testing
 
-- Backend: pytest tests covering all endpoints, auth, CRUD, sorting, categories, image upload, edge cases
-- E2E: Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting, item images
+- Backend: pytest tests covering all endpoints, auth, CRUD, sorting, categories, image upload, quick-add, CSV export/import, seed data, edge cases
+- E2E: Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting, item images, stock-a-shelf (desktop + mobile), CSV export/import
 - Reset DB before E2E runs: `./scripts/reset_db.sh`
+
+## Seed Data
+
+On first startup, the backend seeds an admin user and a physics lab catalog with 7 categories and ~80 items:
+- **Mechanics** — Springs, masses, pulleys, carts, force sensors, etc.
+- **Optics** — Lenses, mirrors, prisms, laser pointers, optical bench, etc.
+- **Electricity & Magnetism** — Batteries, resistors, multimeters, magnets, wire, etc.
+- **Waves & Sound** — Tuning forks, slinkies, wave generators, ripple tanks, etc.
+- **Thermodynamics** — Thermometers, calorimeters, heat lamps, etc.
+- **Measurement & Tools** — Rulers, stopwatches, scales, calipers, etc.
+- **General Lab Equipment** — Safety goggles, tape, clamps, ring stands, etc.
+
+The seed is idempotent (safe to run multiple times). Legacy generic categories with no items are automatically cleaned up.

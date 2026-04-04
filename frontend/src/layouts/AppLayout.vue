@@ -58,6 +58,12 @@
           data-testid="nav-inventory"
         />
         <v-list-item
+          prepend-icon="mdi-lightning-bolt"
+          title="Stock a Shelf"
+          :to="{ name: 'stock-shelf' }"
+          data-testid="nav-stock-shelf"
+        />
+        <v-list-item
           prepend-icon="mdi-clipboard-check"
           title="Checkouts"
           :to="{ name: 'checkouts' }"
@@ -105,6 +111,10 @@
       <v-btn :to="{ name: 'inventory' }" data-testid="bottom-nav-inventory">
         <v-icon>mdi-package-variant-closed</v-icon>
         <span>Inventory</span>
+      </v-btn>
+      <v-btn :to="{ name: 'stock-shelf' }" data-testid="bottom-nav-stock-shelf">
+        <v-icon>mdi-lightning-bolt</v-icon>
+        <span>Stock</span>
       </v-btn>
       <v-btn :to="{ name: 'checkouts' }" data-testid="bottom-nav-checkout">
         <v-icon>mdi-clipboard-check</v-icon>

@@ -2,6 +2,19 @@
   <div>
     <PageHeader title="Inventory" subtitle="Track stock levels across locations">
       <template #actions>
+        <v-btn
+          variant="outlined"
+          :disabled="!locatorFilter"
+          data-testid="export-csv-btn"
+          @click="handleExport"
+        >
+          <v-icon start>mdi-download</v-icon>
+          Export CSV
+        </v-btn>
+        <v-btn variant="outlined" data-testid="import-csv-btn" @click="importDialogOpen = true">
+          <v-icon start>mdi-upload</v-icon>
+          Import CSV
+        </v-btn>
         <v-btn color="primary" data-testid="add-inventory-btn" @click="openCreate">
           <v-icon start>mdi-plus</v-icon>
           Add Stock
@@ -137,6 +150,9 @@
     >
       <InventoryAdjustForm ref="adjustFormRef" />
     </FormDialog>
+
+    <!-- CSV Import Dialog -->
+    <CsvImportDialog v-model="importDialogOpen" @imported="loadItems()" />
   </div>
 </template>
 
@@ -151,6 +167,8 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import FormDialog from '@/components/common/FormDialog.vue'
 import StockLevelBadge from '@/components/inventory/StockLevelBadge.vue'
 import InventoryAdjustForm from '@/components/inventory/InventoryAdjustForm.vue'
+import CsvImportDialog from '@/components/inventory/CsvImportDialog.vue'
+import { inventoryApi } from '@/api'
 
 const inventoryStore = useInventoryStore()
 const locatorsStore = useLocatorsStore()
@@ -166,6 +184,7 @@ const locatorFilter = ref<number | null>(null)
 const lowStockOnly = ref(false)
 const createDialogOpen = ref(false)
 const adjustDialogOpen = ref(false)
+const importDialogOpen = ref(false)
 const saving = ref(false)
 const adjustingRecord = ref<InventoryRecord | null>(null)
 const adjustFormRef = ref<InstanceType<typeof InventoryAdjustForm>>()
@@ -248,6 +267,23 @@ function debouncedSearch() {
     page.value = 1
     loadItems()
   }, 300)
+}
+
+async function handleExport() {
+  if (!locatorFilter.value) return
+  try {
+    const blob = await inventoryApi.exportCsv(locatorFilter.value)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `inventory_export.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    notify.error(e instanceof Error ? e.message : 'Failed to export')
+  }
 }
 
 function openCreate() {

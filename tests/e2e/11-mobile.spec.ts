@@ -26,7 +26,7 @@ describe('Mobile layout', () => {
     expect(bottomNav).toBeTruthy();
   });
 
-  test('Bottom navigation includes all 5 items', async () => {
+  test('Bottom navigation includes all 6 items', async () => {
     const homeBtn = await page.$('[data-testid="bottom-nav-home"]');
     expect(homeBtn).toBeTruthy();
 
@@ -35,6 +35,9 @@ describe('Mobile layout', () => {
 
     const inventoryBtn = await page.$('[data-testid="bottom-nav-inventory"]');
     expect(inventoryBtn).toBeTruthy();
+
+    const stockShelfBtn = await page.$('[data-testid="bottom-nav-stock-shelf"]');
+    expect(stockShelfBtn).toBeTruthy();
 
     const checkoutBtn = await page.$('[data-testid="bottom-nav-checkout"]');
     expect(checkoutBtn).toBeTruthy();

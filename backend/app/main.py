@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from app.config import settings
 from app.database import SessionLocal
 from app.utils.seed import run_seed
-from app.routers import admin, auth, users, locators, sublocators, items, inventory, checkouts
+from app.routers import admin, auth, users, locators, sublocators, items, inventory, checkouts, csv_io
 
 
 @asynccontextmanager
@@ -59,6 +59,7 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(locators.router, prefix="/api/v1")
 app.include_router(sublocators.router, prefix="/api/v1")
 app.include_router(items.router, prefix="/api/v1")
+app.include_router(csv_io.router, prefix="/api/v1")
 app.include_router(inventory.router, prefix="/api/v1")
 app.include_router(checkouts.router, prefix="/api/v1")
 

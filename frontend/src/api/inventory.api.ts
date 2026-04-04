@@ -7,6 +7,9 @@ import type {
   InventoryUpdate,
   InventoryAdjust,
   InventoryFilters,
+  QuickAddRequest,
+  QuickAddResponse,
+  ImportResult,
 } from '@/types'
 
 export const inventoryApi = {
@@ -38,6 +41,31 @@ export const inventoryApi = {
 
   async adjust(id: number, adjustment: InventoryAdjust): Promise<InventoryRecord> {
     const { data } = await api.post<InventoryRecord>(`/inventory/${id}/adjust`, adjustment)
+    return data
+  },
+
+  async quickAdd(payload: QuickAddRequest): Promise<QuickAddResponse> {
+    const { data } = await api.post<QuickAddResponse>('/inventory/quick-add', payload)
+    return data
+  },
+
+  async exportCsv(locatorId: number, sublocatorId?: number): Promise<Blob> {
+    const params: Record<string, number> = { locator_id: locatorId }
+    if (sublocatorId) params.sublocator_id = sublocatorId
+    const { data } = await api.get('/inventory/export', {
+      params,
+      responseType: 'blob',
+    })
+    return data as Blob
+  },
+
+  async importCsv(locatorId: number, file: File): Promise<ImportResult> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('locator_id', locatorId.toString())
+    const { data } = await api.post<ImportResult>('/inventory/import', formData, {
+      headers: { 'Content-Type': undefined as unknown as string },
+    })
     return data
   },
 }

@@ -7,6 +7,8 @@ import type {
   InventoryAdjust,
   InventoryFilters,
   PaginationParams,
+  QuickAddRequest,
+  QuickAddResponse,
 } from '@/types'
 import { inventoryApi } from '@/api'
 
@@ -47,6 +49,10 @@ export const useInventoryStore = defineStore('inventory', () => {
     return await inventoryApi.adjust(id, payload)
   }
 
+  async function quickAdd(payload: QuickAddRequest): Promise<QuickAddResponse> {
+    return await inventoryApi.quickAdd(payload)
+  }
+
   return {
     records,
     total,
@@ -57,5 +63,6 @@ export const useInventoryStore = defineStore('inventory', () => {
     updateRecord,
     deleteRecord,
     adjustStock,
+    quickAdd,
   }
 })

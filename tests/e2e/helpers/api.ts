@@ -233,6 +233,56 @@ export async function getToken(
   return res.json() as Promise<{ access_token: string; refresh_token: string }>;
 }
 
+export async function exportInventoryCsv(
+  locatorId: number,
+  sublocatorId?: number,
+): Promise<string> {
+  const token = await getAdminToken();
+  const params = new URLSearchParams({ locator_id: locatorId.toString() });
+  if (sublocatorId) params.set('sublocator_id', sublocatorId.toString());
+  const res = await fetch(`${API_BASE}/inventory/export?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+  return res.text();
+}
+
+export async function importInventoryCsv(
+  locatorId: number,
+  csvContent: string,
+): Promise<any> {
+  const token = await getAdminToken();
+  const boundary = '----FormBoundary' + Date.now().toString(36);
+  const body = [
+    `--${boundary}\r\nContent-Disposition: form-data; name="locator_id"\r\n\r\n${locatorId}`,
+    `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="import.csv"\r\nContent-Type: text/csv\r\n\r\n${csvContent}`,
+    `--${boundary}--`,
+  ].join('\r\n');
+  const res = await fetch(`${API_BASE}/inventory/import`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+    },
+    body,
+  });
+  if (!res.ok) throw new Error(`Import failed: ${res.status}`);
+  return res.json();
+}
+
+export async function quickAddInventory(data: {
+  item_id?: number;
+  item_name?: string;
+  category_id?: number;
+  unit_of_measure?: string;
+  locator_id: number;
+  sublocator_id?: number | null;
+  quantity: number;
+  min_quantity?: number;
+}): Promise<any> {
+  return apiPost('/inventory/quick-add', data);
+}
+
 export async function waitForFrontend(maxRetries = 30): Promise<void> {
   for (let i = 0; i < maxRetries; i++) {
     try {

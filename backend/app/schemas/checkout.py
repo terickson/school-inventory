@@ -118,6 +118,30 @@ class CheckoutSummary(BaseModel):
     low_stock_count: int
 
 
+class QuickAddRequest(BaseModel):
+    # Identify item: either by ID or by name (to create on-the-fly)
+    item_id: int | None = None
+    item_name: str | None = None
+    category_id: int | None = None
+    unit_of_measure: str = "unit"
+
+    # Location (always required)
+    locator_id: int
+    sublocator_id: int | None = None
+
+    # Quantity
+    quantity: int = 1
+    min_quantity: int = 0
+
+
+class QuickAddResponse(BaseModel):
+    inventory: InventoryResponse
+    item_created: bool
+    item: NestedItem
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PaginatedResponse(BaseModel):
     total: int
     skip: int

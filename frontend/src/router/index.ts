@@ -54,6 +54,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/stock-shelf',
+      name: 'stock-shelf',
+      component: () => import('@/views/inventory/StockShelfView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/checkouts',
       name: 'checkouts',
       component: () => import('@/views/checkout/CheckoutView.vue'),
