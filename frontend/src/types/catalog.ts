@@ -41,3 +41,17 @@ export interface ItemUpdate {
   category_id?: number
   unit_of_measure?: string
 }
+
+export interface IdentifySuggestion {
+  name: string
+  description: string
+  category_name: string
+  category_id: number | null
+  unit_of_measure: string
+  confidence: 'high' | 'medium' | 'low'
+  reasoning: string
+}
+
+export interface Features {
+  identify_item: boolean
+}

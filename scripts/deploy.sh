@@ -194,10 +194,14 @@ SECRET_KEY=${secret_key}
 ADMIN_USERNAME=admin
 ADMIN_EMAIL=admin@school.edu
 ADMIN_PASSWORD=AdminPass123!
+
+# Optional: enables AI-powered item identification (https://console.anthropic.com)
+# ANTHROPIC_API_KEY=
 ENVEOF
 
         warn "Default .env created at ${ENV_FILE}"
         warn "IMPORTANT: Change ADMIN_PASSWORD and SECRET_KEY before exposing to users!"
+        warn "Optional: Set ANTHROPIC_API_KEY to enable AI item identification"
     fi
 }
 

@@ -56,6 +56,7 @@ done
 echo "==> Starting backend on port ${BACKEND_PORT}..."
 cd "$BACKEND_DIR"
 source venv/bin/activate
+export ANTHROPIC_API_KEY=mock  # Enable identify feature with canned responses for E2E
 uvicorn app.main:app --port "$BACKEND_PORT" > /tmp/e2e-backend.log 2>&1 &
 BACKEND_PID=$!
 wait_for_service "http://localhost:${BACKEND_PORT}/health" "Backend"

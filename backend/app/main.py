@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from app.config import settings
 from app.database import SessionLocal
 from app.utils.seed import run_seed
-from app.routers import admin, auth, users, locators, sublocators, items, inventory, checkouts, csv_io
+from app.routers import admin, auth, users, locators, sublocators, items, inventory, checkouts, csv_io, identify
 
 
 @asynccontextmanager
@@ -62,6 +62,7 @@ app.include_router(items.router, prefix="/api/v1")
 app.include_router(csv_io.router, prefix="/api/v1")
 app.include_router(inventory.router, prefix="/api/v1")
 app.include_router(checkouts.router, prefix="/api/v1")
+app.include_router(identify.router, prefix="/api/v1")
 
 
 # Serve uploaded images (create dir eagerly so StaticFiles doesn't fail)

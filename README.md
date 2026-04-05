@@ -10,6 +10,7 @@ A web-based inventory management system for tracking school supplies across phys
 - **Role-based access control** — Admin and Teacher roles
 - **Dashboard** with summary stats and low-stock alerts
 - **Responsive mobile-first UI** — optimized for phones with bottom navigation, stacked data tables, and touch-friendly action menus
+- **AI-powered item identification** — photograph unknown equipment and let Claude Vision identify it (optional, requires Anthropic API key)
 - **Self-hosted and free** — no per-seat licensing
 
 ## User Roles & Permissions
@@ -114,6 +115,10 @@ Legend:  ● = full access    ◐ = own resources only    ○ = no access
 ├──────────────────────────────────┼───────────┼───────────┤
 │ UPLOADS                          │           │           │
 │  GET    /uploads/{filename}      │     ●     │     ●     │
+├──────────────────────────────────┼───────────┼───────────┤
+│ IDENTIFY (optional)              │           │           │
+│  GET    /features                │  public   │  public   │
+│  POST   /items/identify          │     ●     │     ●     │
 └──────────────────────────────────┴───────────┴───────────┘
 ```
 
@@ -127,6 +132,7 @@ Legend:  ● = full access    ◐ = own resources only    ○ = no access
 │  Dashboard                       │  visible  │  visible  │
 │  Locations                       │  visible  │  visible  │
 │  Catalog                         │  visible  │  visible  │
+│  Identify Item (if API key set)  │  visible  │  visible  │
 │  Categories                      │  visible  │  visible  │
 │  Inventory                       │  visible  │  visible  │
 │  Checkouts                       │  visible  │  visible  │
@@ -464,6 +470,49 @@ This uses the SQLite backup API to create a consistent snapshot of the database,
 | `ENVIRONMENT`                | `development`                    | `development` or `production`      |
 | `UPLOAD_DIR`                 | `uploads`                        | Directory for item images          |
 | `MAX_IMAGE_SIZE_MB`          | `5`                              | Max image upload size in MB        |
+| `ANTHROPIC_API_KEY`          | *(empty)*                        | Anthropic API key for AI item identification (optional) |
+
+## AI Item Identification (Optional)
+
+The **Identify Item** feature lets you photograph unknown lab equipment and get an AI-powered identification, including a suggested name, description, category, and confidence level. It uses the [Anthropic Claude API](https://www.anthropic.com/api) with Claude's vision capabilities.
+
+This feature is entirely optional. When no API key is configured, the "Identify Item" navigation item is hidden and the app works exactly as before.
+
+### Getting an Anthropic API Key
+
+1. Go to [console.anthropic.com](https://console.anthropic.com/) and create an account
+2. Navigate to **Settings > API Keys**
+3. Click **Create Key** and copy the key (it starts with `sk-ant-`)
+4. Add the key to your environment:
+
+**For local development** — add to `backend/.env`:
+```env
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+**For Docker deployment** — add to your `.env` file at the install location (e.g., `/opt/apps/school-inventory/.env`):
+```env
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+Then restart the backend (`docker compose restart backend` for Docker, or restart the uvicorn process for local dev).
+
+### Cost
+
+Anthropic charges per API call based on token usage. Each item identification costs approximately **$0.005-$0.01** (half a cent to one cent). New accounts receive a small amount of free credits. There is no free tier, but typical usage for a school (identifying a closet full of equipment) would cost well under $1.
+
+### How It Works
+
+1. Navigate to **Identify Item** in the sidebar
+2. Take a photo or upload an image of the unknown equipment
+3. Click **Identify** — the image is sent to Claude for analysis
+4. Review the AI's suggestion (name, description, category, confidence level)
+5. Edit any fields as needed
+6. Click **Create Catalog Item** to add it to your catalog, or **Create & Add to Inventory** to also navigate to Stock a Shelf
+
+### Testing Without API Costs
+
+Set `ANTHROPIC_API_KEY=mock` to enable the feature with canned responses instead of calling the real API. This is useful for testing the UI flow without incurring any costs. The E2E test suite uses this automatically.
 
 ## Running Tests
 

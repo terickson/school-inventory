@@ -52,6 +52,13 @@
           data-testid="nav-catalog"
         />
         <v-list-item
+          v-if="featuresStore.identifyItemEnabled"
+          prepend-icon="mdi-camera-outline"
+          title="Identify Item"
+          :to="{ name: 'identify-item' }"
+          data-testid="nav-identify-item"
+        />
+        <v-list-item
           prepend-icon="mdi-package-variant-closed"
           title="Inventory"
           :to="{ name: 'inventory' }"
@@ -150,10 +157,12 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useFeaturesStore } from '@/stores/features'
 import { useBreakpoint, useNotify } from '@/composables'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const authStore = useAuthStore()
+const featuresStore = useFeaturesStore()
 const router = useRouter()
 const { isMobile } = useBreakpoint()
 const notify = useNotify()

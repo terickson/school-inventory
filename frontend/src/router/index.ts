@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useFeaturesStore } from '@/stores/features'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,6 +40,12 @@ const router = createRouter({
       path: '/catalog',
       name: 'catalog',
       component: () => import('@/views/catalog/CatalogView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/identify-item',
+      name: 'identify-item',
+      component: () => import('@/views/catalog/IdentifyItemView.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -86,6 +93,8 @@ router.beforeEach(async (to) => {
   if (!initialized) {
     initialized = true
     await authStore.initialize()
+    const featuresStore = useFeaturesStore()
+    featuresStore.fetchFeatures() // fire-and-forget, non-blocking
   }
 
   if (to.meta.public) {

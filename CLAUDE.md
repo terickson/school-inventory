@@ -13,7 +13,7 @@ A web-based inventory management system for schools. Teachers track supplies in 
 
 ## Tech Stack
 
-- Backend: FastAPI, SQLAlchemy 2.x, Alembic, Pydantic v2, python-jose (JWT), passlib (bcrypt)
+- Backend: FastAPI, SQLAlchemy 2.x, Alembic, Pydantic v2, python-jose (JWT), passlib (bcrypt), anthropic (Claude Vision API)
 - Frontend: Vue 3 (Composition API), Vuetify 3, Pinia, Vue Router, Axios, Vite, TypeScript
 - Database: SQLite with WAL mode
 - Testing: pytest (backend), Vitest (frontend), Puppeteer (E2E)
@@ -28,7 +28,7 @@ backend/
     database.py      # SQLAlchemy engine, session, PRAGMA listener
     models/          # SQLAlchemy ORM models (user, item, locator, checkout)
     schemas/         # Pydantic request/response schemas
-    routers/         # FastAPI route handlers (auth, users, locators, sublocators, items, inventory, checkouts, admin, csv_io)
+    routers/         # FastAPI route handlers (auth, users, locators, sublocators, items, inventory, checkouts, admin, csv_io, identify)
     crud/            # Database query functions
     dependencies/    # auth (JWT, get_current_user, require_admin), pagination
     utils/seed.py    # Idempotent admin user + physics catalog seeding
@@ -44,9 +44,9 @@ frontend/
     layouts/         # AuthLayout, AppLayout
     plugins/         # Vuetify configuration
     router/          # Vue Router with auth guards
-    stores/          # Pinia stores (auth, users, locators, catalog, inventory, checkout)
+    stores/          # Pinia stores (auth, users, locators, catalog, inventory, checkout, features)
     types/           # TypeScript interfaces
-    views/           # Page-level components (includes inventory/StockShelfView.vue for rapid entry)
+    views/           # Page-level components (includes inventory/StockShelfView.vue for rapid entry, catalog/IdentifyItemView.vue for AI identification)
 
 tests/e2e/           # Puppeteer E2E tests
 scripts/reset_db.sh  # Database reset for testing
@@ -95,6 +95,8 @@ All endpoints under `/api/v1/`. Swagger docs at `/docs`. Key endpoint groups:
   - `GET /inventory/export?locator_id=X&sublocator_id=Y` — CSV export of inventory for a location
   - `POST /inventory/import` — CSV bulk import of inventory for a location (multipart form: file + locator_id)
 - `/checkouts/` — Checkout, return, summary
+- `/features` — `GET` returns which optional features are enabled (e.g., `identify_item`). No auth required.
+- `/items/identify` — `POST` accepts an image (multipart form), returns AI-powered identification suggestion (name, description, category, confidence). Requires `ANTHROPIC_API_KEY` to be configured.
 - `/admin/backup` — Download SQLite database backup (any authenticated user)
 
 ### Pagination & Sorting
@@ -134,6 +136,7 @@ Example: `GET /api/v1/users?sort_by=username&sort_order=desc&limit=10`
 - All interactive elements have `data-testid` attributes for E2E testing
 - UI uses "Storage Location"/"Location" and "Shelf" in user-facing text, not "Locator"/"Sublocator"
 - Only the Users page and navigation item are admin-only in the UI; all other pages and actions are available to all authenticated users
+- "Identify Item" nav item is conditionally shown based on whether `ANTHROPIC_API_KEY` is configured (checked via `GET /features` on app init)
 - Mobile responsive: views use `useBreakpoint()` composable and computed headers to hide non-essential table columns, stack toolbar filters, and swap icon buttons for action menus on small screens
 
 ## Domain Terminology
@@ -146,6 +149,7 @@ Example: `GET /api/v1/users?sort_by=username&sort_order=desc&limit=10`
 | System manager | admin (role) | Administrator |
 | Item borrower | teacher (role) | Teacher |
 | Rapid inventory entry | quick-add / stock-shelf | Stock a Shelf |
+| AI item identification | identify | Identify Item |
 
 ## Default Credentials
 
@@ -160,13 +164,15 @@ Backend reads from `backend/.env`. Key vars:
 - `CORS_ORIGINS` — Allowed frontend origins
 - `UPLOAD_DIR` — Directory for uploaded item images (default: `uploads`)
 - `MAX_IMAGE_SIZE_MB` — Maximum image upload size in MB (default: 5)
+- `ANTHROPIC_API_KEY` — (Optional) Anthropic API key for AI item identification. If empty, the "Identify Item" nav item is hidden. Set to `mock` for testing with canned responses.
 
 Frontend uses `VITE_API_BASE_URL` (default: `/api/v1`).
 
 ## Testing
 
 - Backend: pytest tests covering all endpoints, auth, CRUD, sorting, categories, image upload, quick-add, CSV export/import, seed data, edge cases
-- E2E: Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting, item images, stock-a-shelf (desktop + mobile), CSV export/import
+- E2E: Puppeteer tests covering login, user management, locators, categories, catalog, inventory, checkout/return, dashboard, sorting, item images, stock-a-shelf (desktop + mobile), CSV export/import, AI item identification
+- E2E runs use `ANTHROPIC_API_KEY=mock` for identify tests (canned responses, no API cost)
 - Reset DB before E2E runs: `./scripts/reset_db.sh`
 
 ## Seed Data

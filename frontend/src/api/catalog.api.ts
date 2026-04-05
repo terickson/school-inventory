@@ -8,6 +8,8 @@ import type {
   Category,
   CategoryCreate,
   CategoryUpdate,
+  IdentifySuggestion,
+  Features,
 } from '@/types'
 
 export const catalogApi = {
@@ -83,5 +85,24 @@ export const catalogApi = {
 
   async deleteCategory(id: number): Promise<void> {
     await api.delete(`/categories/${id}`)
+  },
+
+  // --- Features ---
+
+  async getFeatures(): Promise<Features> {
+    const { data } = await api.get<Features>('/features')
+    return data
+  },
+
+  // --- Identify ---
+
+  async identifyItem(file: File): Promise<IdentifySuggestion> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await api.post<IdentifySuggestion>('/items/identify', formData, {
+      headers: { 'Content-Type': undefined as unknown as string },
+      timeout: 30000,
+    })
+    return data
   },
 }

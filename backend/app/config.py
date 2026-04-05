@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     upload_dir: str = "uploads"
     max_image_size_mb: int = 5
+    anthropic_api_key: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

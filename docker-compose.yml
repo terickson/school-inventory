@@ -16,6 +16,7 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-AdminPass123!}
       - CORS_ORIGINS=["http://localhost","http://localhost:80","http://localhost:8080"]
       - ENVIRONMENT=production
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
